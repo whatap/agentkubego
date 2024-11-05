@@ -12,7 +12,7 @@ func Route() {
 		init router
 	*/
 	var router *mux.Router
-	if config.Conf.CollectKubeApiserverMonitoringEnabled || config.Conf.CollectEtcdMonitoringEnabled {
+	if config.Conf.CollectKubeApiserverMonitoringEnabled || config.Conf.CollectEtcdMonitoringEnabled || config.Conf.CollectKubeSchedulerMonitoringEnabled {
 		router = mux.NewRouter()
 	} else {
 		return
@@ -42,9 +42,16 @@ func Route() {
 	}
 
 	/*
+		scheduler router
+	*/
+	if config.Conf.CollectKubeSchedulerMonitoringEnabled {
+		//router.HandleFunc("/etcd-server-has-leader", GetEtcdServerHasLeader).Methods("GET")
+	}
+
+	/*
 		control plane helper http server
 	*/
-	if config.Conf.CollectKubeApiserverMonitoringEnabled || config.Conf.CollectEtcdMonitoringEnabled {
+	if config.Conf.CollectKubeApiserverMonitoringEnabled || config.Conf.CollectEtcdMonitoringEnabled || config.Conf.CollectKubeSchedulerMonitoringEnabled {
 		err := http.ListenAndServe(":"+config.Conf.Port, httpHandler(router))
 		if err != nil {
 			log.Println("http server error", err)
