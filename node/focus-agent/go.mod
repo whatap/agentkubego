@@ -8,5 +8,5 @@ require (
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/whatap/go-api v0.1.10
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
-	golang.org/x/text v0.3.7
+	golang.org/x/text v0.3.8
 )
