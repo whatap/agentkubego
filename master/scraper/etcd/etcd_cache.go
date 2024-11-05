@@ -9,7 +9,7 @@ import (
 var etcdMetricsCache map[string]*io_prometheus_client.MetricFamily
 
 func init() {
-	if config.Conf.EtcdMonitoringEnabled {
+	if config.Conf.CollectEtcdMonitoringEnabled {
 		etcdMetricsCache = make(map[string]*io_prometheus_client.MetricFamily)
 	}
 }

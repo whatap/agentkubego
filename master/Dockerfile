@@ -10,7 +10,7 @@ RUN echo "Kubernetes Metrics Helper Build is running on $BUILDPLATFORM, building
 WORKDIR /data/agent/master
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_control_plane_helper whatap_control_plane_helper.go
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_control_plane_helper ./cmd/whatap-control-plane-helper/whatap_control_plane_helper.go
 
 RUN ls /data/agent/master
 

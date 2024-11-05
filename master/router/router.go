@@ -12,7 +12,7 @@ func Route() {
 		init router
 	*/
 	var router *mux.Router
-	if config.Conf.KubeApiserverMonitoringEnabled || config.Conf.EtcdMonitoringEnabled {
+	if config.Conf.CollectKubeApiserverMonitoringEnabled || config.Conf.CollectEtcdMonitoringEnabled {
 		router = mux.NewRouter()
 	} else {
 		return
@@ -21,7 +21,7 @@ func Route() {
 	/*
 		kube-apiserver router
 	*/
-	if config.Conf.KubeApiserverMonitoringEnabled {
+	if config.Conf.CollectKubeApiserverMonitoringEnabled {
 		router.HandleFunc("/apiserver-request-duration-seconds", GetApiserverRequestDurationSeconds).Methods("GET")
 		router.HandleFunc("/apiserver-request-total", GetApiserverRequestTotal).Methods("GET")
 		router.HandleFunc("/apiserver-current-inflight-requests", GetApiserverCurrentInflightRequest).Methods("GET")
@@ -34,7 +34,7 @@ func Route() {
 	/*
 		etcd router
 	*/
-	if config.Conf.EtcdMonitoringEnabled {
+	if config.Conf.CollectEtcdMonitoringEnabled {
 		router.HandleFunc("/etcd-server-has-leader", GetEtcdServerHasLeader).Methods("GET")
 		router.HandleFunc("/etcd-server-leader-changes-seen-total", GetEtcdServerLeaderChangesSeenTotal).Methods("GET")
 		router.HandleFunc("/etcd-server-proposals-committed-total", GetEtcdServerProposalsCommittedTotal).Methods("GET")
@@ -44,7 +44,7 @@ func Route() {
 	/*
 		control plane helper http server
 	*/
-	if config.Conf.KubeApiserverMonitoringEnabled || config.Conf.EtcdMonitoringEnabled {
+	if config.Conf.CollectKubeApiserverMonitoringEnabled || config.Conf.CollectEtcdMonitoringEnabled {
 		err := http.ListenAndServe(":"+config.Conf.Port, httpHandler(router))
 		if err != nil {
 			log.Println("http server error", err)
