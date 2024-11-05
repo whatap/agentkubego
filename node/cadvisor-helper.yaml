@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: whatap-monitoring
+  labels:
+    run: cadvisor-helper-dev
+  name: cadvisor-helper-dev
+spec:
+  serviceAccount: whatap
+  containers:
+    - image: whatap/cadvisor_helper_dev:latest
+      name: cadvisor-helper-dev
+      resources: {}
+      command: ["/bin/bash", "-c", "sleep 3600000"]
+      volumeMounts:
+        - name : containerddomainsocket
+          mountPath: /run/containerd/containerd.sock
+        - name: rootfs
+          mountPath: /rootfs
+          readOnly: true
+        - name: hostsys
+          mountPath: /sys
+          readOnly: true
+        - name: hostdiskdevice
+          mountPath: /dev/disk
+          readOnly: true
+      env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+  volumes:
+    - hostPath:
+        path: /run/containerd/containerd.sock
+      name: containerddomainsocket
+    - hostPath:
+        path: /
+      name: rootfs
+    - hostPath:
+        path: /sys
+      name: hostsys
+    - hostPath:
+        path: /dev/disk
+      name: hostdiskdevice
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
