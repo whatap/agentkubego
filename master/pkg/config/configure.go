@@ -18,19 +18,19 @@ type Configure struct {
 	CollectControlPlaneMonitoringEnabled bool
 
 	//kube-apiserver client config
-	KubeApiserverMonitoringEnabled bool
-	KubeConfigPath                 string
-	KubeMasterUrl                  string
-	KubeClientTlsVerify            bool
+	CollectKubeApiserverMonitoringEnabled bool
+	KubeConfigPath                        string
+	KubeMasterUrl                         string
+	KubeClientTlsVerify                   bool
 
 	//etcd config
-	EtcdMonitoringEnabled bool
-	EtcdHosts             []string
-	EtcdMetricsEndpoint   string
-	EtcdPort              string
-	EtcdCaCertPath        string
-	EtcdClientCertPath    string
-	EtcdClientKeyPath     string
+	CollectEtcdMonitoringEnabled bool
+	EtcdHosts                    []string
+	EtcdMetricsEndpoint          string
+	EtcdPort                     string
+	EtcdCaCertPath               string
+	EtcdClientCertPath           string
+	EtcdClientKeyPath            string
 }
 
 func init() {
@@ -44,18 +44,18 @@ func init() {
 
 		CollectControlPlaneMonitoringEnabled: getBool("collect_control_plane_monitoring_enabled", "false"),
 
-		KubeApiserverMonitoringEnabled: getBool("kube_apiserver_monitoring_enabled", getString("collect_control_plane_monitoring_enabled", "false")),
-		KubeConfigPath:                 getString("kube_config_path", ""),
-		KubeMasterUrl:                  getString("kube_master_url", ""),
-		KubeClientTlsVerify:            getBool("kube_client_tls_verify", "true"),
+		CollectKubeApiserverMonitoringEnabled: getBool("collect_kube_apiserver_monitoring_enabled", getString("collect_control_plane_monitoring_enabled", "false")),
+		KubeConfigPath:                        getString("kube_config_path", ""),
+		KubeMasterUrl:                         getString("kube_master_url", ""),
+		KubeClientTlsVerify:                   getBool("kube_client_tls_verify", "true"),
 
-		EtcdMonitoringEnabled: getBool("etcd_monitoring_enabled", "false"),
-		EtcdHosts:             getStringList("etcd_hosts", []string{}),
-		EtcdMetricsEndpoint:   getString("etcd_metrics_endpoint", "/metrics"),
-		EtcdPort:              getString("etcd_port", "2379"),
-		EtcdCaCertPath:        getString("etcd_ca_cert_path", "/etc/kubernetes/pki/etcd/ca.crt"),
-		EtcdClientCertPath:    getString("etcd_client_cert_path", "/etc/kubernetes/pki/etcd/server.crt"),
-		EtcdClientKeyPath:     getString("etcd_client_key_path", "/etc/kubernetes/pki/etcd/server.key"),
+		CollectEtcdMonitoringEnabled: getBool("collect_etcd_monitoring_enabled", "false"),
+		EtcdHosts:                    getStringList("etcd_hosts", []string{}),
+		EtcdMetricsEndpoint:          getString("etcd_metrics_endpoint", "/metrics"),
+		EtcdPort:                     getString("etcd_port", "2379"),
+		EtcdCaCertPath:               getString("etcd_ca_cert_path", "/etc/kubernetes/pki/etcd/ca.crt"),
+		EtcdClientCertPath:           getString("etcd_client_cert_path", "/etc/kubernetes/pki/etcd/server.crt"),
+		EtcdClientKeyPath:            getString("etcd_client_key_path", "/etc/kubernetes/pki/etcd/server.key"),
 	}
 
 	printConf()
@@ -71,14 +71,14 @@ func printConf() {
 
 	log.Println()
 	log.Println("------ kube-apiserver config ------")
-	log.Println("kube_apiserver_monitoring_enabled:", strconv.FormatBool(Conf.KubeApiserverMonitoringEnabled))
+	log.Println("kube_apiserver_monitoring_enabled:", strconv.FormatBool(Conf.CollectKubeApiserverMonitoringEnabled))
 	log.Println("kube_config_path:", Conf.KubeConfigPath)
 	log.Println("kube_master_url:", Conf.KubeMasterUrl)
 	log.Println("kube_client_tls_verify:", strconv.FormatBool(Conf.KubeClientTlsVerify))
 
 	log.Println()
 	log.Println("------ etcd config ------")
-	log.Println("etcd_monitoring_enabled:", Conf.EtcdMonitoringEnabled)
+	log.Println("etcd_monitoring_enabled:", Conf.CollectEtcdMonitoringEnabled)
 	log.Println("etcd_urls:", Conf.EtcdHosts)
 	log.Println("etcd_metrics_endpoint:", Conf.EtcdMetricsEndpoint)
 	log.Println("etcd_port:", Conf.EtcdPort)

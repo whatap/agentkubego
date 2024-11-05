@@ -12,14 +12,14 @@ func main() {
 	/*
 		수집기
 	*/
-	if config.Conf.KubeApiserverMonitoringEnabled {
+	if config.Conf.CollectKubeApiserverMonitoringEnabled {
 		log.Println("kube-apiserver monitoring config is enabled. kube-apiserver metrics scraper started...")
 		kube_apiserver.Do()
 	} else {
 		log.Println("kube-apiserver monitoring config is disabled.")
 	}
 
-	if config.Conf.EtcdMonitoringEnabled {
+	if config.Conf.CollectEtcdMonitoringEnabled {
 		log.Println("etcd monitoring config is enabled. etcd metrics scraper started...")
 		etcd.Do()
 	} else {
