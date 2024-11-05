@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extld
 
 RUN ls /data/agent/master
 
-FROM --platform=${TARGETPLATFORM} alpine as packaging
+FROM --platform=${TARGETPLATFORM} alpine AS packaging
 
 ARG BUILDPLATFORM
 ARG BUILDARCH
