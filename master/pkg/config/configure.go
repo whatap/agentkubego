@@ -31,6 +31,9 @@ type Configure struct {
 	EtcdCaCertPath               string
 	EtcdClientCertPath           string
 	EtcdClientKeyPath            string
+
+	//scheduler config
+	CollectKubeSchedulerMonitoringEnabled bool
 }
 
 func init() {
@@ -56,6 +59,8 @@ func init() {
 		EtcdCaCertPath:               getString("etcd_ca_cert_path", "/etc/kubernetes/pki/etcd/ca.crt"),
 		EtcdClientCertPath:           getString("etcd_client_cert_path", "/etc/kubernetes/pki/etcd/server.crt"),
 		EtcdClientKeyPath:            getString("etcd_client_key_path", "/etc/kubernetes/pki/etcd/server.key"),
+
+		CollectKubeSchedulerMonitoringEnabled: getBool("collect_kube_scheduler_monitoring_enabled", "false"),
 	}
 
 	printConf()
@@ -71,21 +76,25 @@ func printConf() {
 
 	log.Println()
 	log.Println("------ kube-apiserver config ------")
-	log.Println("kube_apiserver_monitoring_enabled:", strconv.FormatBool(Conf.CollectKubeApiserverMonitoringEnabled))
+	log.Println("collect_kube_apiserver_monitoring_enabled:", strconv.FormatBool(Conf.CollectKubeApiserverMonitoringEnabled))
 	log.Println("kube_config_path:", Conf.KubeConfigPath)
 	log.Println("kube_master_url:", Conf.KubeMasterUrl)
 	log.Println("kube_client_tls_verify:", strconv.FormatBool(Conf.KubeClientTlsVerify))
 
 	log.Println()
 	log.Println("------ etcd config ------")
-	log.Println("etcd_monitoring_enabled:", Conf.CollectEtcdMonitoringEnabled)
+	log.Println("collect_etcd_monitoring_enabled:", Conf.CollectEtcdMonitoringEnabled)
 	log.Println("etcd_urls:", Conf.EtcdHosts)
 	log.Println("etcd_metrics_endpoint:", Conf.EtcdMetricsEndpoint)
 	log.Println("etcd_port:", Conf.EtcdPort)
 	log.Println("etcd_ca_cert_path:", Conf.EtcdCaCertPath)
 	log.Println("etcd_client_cert_path:", Conf.EtcdClientCertPath)
 	log.Println("etcd_client_key_path:", Conf.EtcdClientKeyPath)
+
 	log.Println()
+	log.Println("------ kube-scheduler config ------")
+	log.Println("collect_kube_scheduler_monitoring_enabled:", Conf.CollectKubeSchedulerMonitoringEnabled)
+
 }
 
 func getStringList(key string, defaultList []string) []string {

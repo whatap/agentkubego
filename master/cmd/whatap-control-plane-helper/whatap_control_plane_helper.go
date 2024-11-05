@@ -26,6 +26,12 @@ func main() {
 		log.Println("etcd monitoring config is disabled.")
 	}
 
+	if config.Conf.CollectKubeSchedulerMonitoringEnabled {
+		log.Println("kube-scheduler monitoring config is enabled. kube-scheduler metrics scraper started...")
+		etcd.Do()
+	} else {
+		log.Println("kube-scheduler monitoring config is disabled.")
+	}
 	/*
 		응답기
 	*/

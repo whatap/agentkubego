@@ -9,7 +9,7 @@ import (
 var apiserverMetricsCache map[string]*io_prometheus_client.MetricFamily
 
 func init() {
-	if config.Conf.KubeApiserverMonitoringEnabled {
+	if config.Conf.CollectKubeApiserverMonitoringEnabled {
 		apiserverMetricsCache = make(map[string]*io_prometheus_client.MetricFamily)
 	}
 }

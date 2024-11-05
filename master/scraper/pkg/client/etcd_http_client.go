@@ -12,7 +12,7 @@ import (
 var client *http.Client
 
 func init() {
-	if config.Conf.EtcdMonitoringEnabled {
+	if config.Conf.CollectEtcdMonitoringEnabled {
 		// PEM 인증서와 키파일 로드
 		cert, err := tls.LoadX509KeyPair(config.Conf.EtcdClientCertPath, config.Conf.EtcdClientKeyPath)
 		if err != nil {
