@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM} golang:1.21.4-alpine AS whatap_control_plane_helper_build
+FROM --platform=${BUILDPLATFORM} golang:1.22.7-alpine3.20 AS whatap_control_plane_helper_build
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
