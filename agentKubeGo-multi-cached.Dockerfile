@@ -1,5 +1,5 @@
 # Define a stage for whatap/kube_mon image to retrieve necessary files
-FROM whatap/kube_mon:latest AS whatap_kube_mon
+FROM whatap/kube_mon_dev:1.7.15-sec AS whatap_kube_mon
 
 # ===Build cadvisor_helper Binary ===
 FROM golang:1.22.7-alpine3.20 AS whatap_cadvisor_helper_build
