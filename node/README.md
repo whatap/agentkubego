@@ -1,1 +1,0 @@
-docker buildx build --progress=plain  --platform linux/amd64 --push --tag whatap/cadvisor_helper:0.0.1 .

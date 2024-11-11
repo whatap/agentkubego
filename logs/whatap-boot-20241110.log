@@ -1,0 +1,85 @@
+2024/11/10 21:12:39 
+2024/11/10 21:12:39 ## OPEN LOG FILE  boot  20241110 12:12:39.381 ##
+2024/11/10 21:12:39 
+2024/11/10 21:12:39 [WA212](config.go:220)(config.reload) fail to load license file
+2024/11/10 21:12:39 [WA212-02](config.go:225)(config.reload) create file path whatap.conf
+2024/11/10 21:12:39 [WA213](config.go:233)(config.reload)  Reload Config: whatap.conf
+2024/11/10 21:12:39 [run cadvisor](cadvisor_helper.go:25)(main.main) port=6801
+
+2024/11/10 21:12:39 [whatap-node-helper](pod_scraper.go:49)(pods.RunPodInformer) start nodeName=
+
+2024/11/10 21:12:39 [31m[whatap-node-helper](cadvisor_helper.go:26)(main.main) InitializeInformer error getting client: <nil>
+[0m
+2024/11/10 21:14:16 
+2024/11/10 21:14:16 ## OPEN LOG FILE  boot  20241110 12:14:16.190 ##
+2024/11/10 21:14:16 
+2024/11/10 21:14:16 [run cadvisor](cadvisor_helper.go:25)(main.main) port=6801
+
+2024/11/10 21:14:16 [whatap-node-helper](pod_scraper.go:49)(pods.RunPodInformer) start nodeName=
+
+2024/11/10 21:14:16 [31m[whatap-node-helper](cadvisor_helper.go:26)(main.main) InitializeInformer error getting client: <nil>
+[0m
+2024/11/10 21:14:24 
+2024/11/10 21:14:24 ## OPEN LOG FILE  boot  20241110 12:14:24.112 ##
+2024/11/10 21:14:24 
+2024/11/10 21:14:24 [run cadvisor](cadvisor_helper.go:25)(main.main) port=6801
+
+2024/11/10 21:14:24 [whatap-node-helper](pod_scraper.go:49)(pods.RunPodInformer) start nodeName=
+
+2024/11/10 21:14:24 [31m[whatap-node-helper](cadvisor_helper.go:26)(main.main) InitializeInformer error getting client: <nil>
+[0m
+2024/11/10 21:15:18 
+2024/11/10 21:15:18 ## OPEN LOG FILE  boot  20241110 12:15:18.740 ##
+2024/11/10 21:15:18 
+2024/11/10 21:15:18 [run cadvisor](cadvisor_helper.go:25)(main.main) port=6801
+
+2024/11/10 21:15:18 [whatap-node-helper](pod_scraper.go:49)(pods.RunPodInformer) start nodeName=
+
+2024/11/10 21:15:18 [31m[whatap-node-helper](cadvisor_helper.go:26)(main.main) InitializeInformer error getting client: <nil>
+[0m
+2024/11/10 21:15:43 
+2024/11/10 21:15:43 ## OPEN LOG FILE  boot  20241110 12:15:43.709 ##
+2024/11/10 21:15:43 
+2024/11/10 21:15:43 [run cadvisor](cadvisor_helper.go:25)(main.main) port=6801
+
+2024/11/10 21:15:43 [whatap-node-helper](pod_scraper.go:49)(pods.RunPodInformer) start nodeName=
+
+2024/11/10 21:15:43 [whatap-node-helper](kubeClient.go:40)(client.GetKubernetesClient) success load client
+2024/11/10 21:16:22 
+2024/11/10 21:16:22 ## OPEN LOG FILE  boot  20241110 12:16:22.864 ##
+2024/11/10 21:16:22 
+2024/11/10 21:16:22 [run cadvisor](cadvisor_helper.go:25)(main.main) port=6801
+
+2024/11/10 21:16:22 [whatap-node-helper](pod_scraper.go:49)(pods.RunPodInformer) start nodeName=
+
+2024/11/10 21:16:22 [whatap-node-helper](kubeClient.go:40)(client.GetKubernetesClient) success load client
+2024/11/10 21:16:50 
+2024/11/10 21:16:50 ## OPEN LOG FILE  boot  20241110 12:16:50.377 ##
+2024/11/10 21:16:50 
+2024/11/10 21:16:50 [run cadvisor](cadvisor_helper.go:25)(main.main) port=6801
+
+2024/11/10 21:16:50 [whatap-node-helper](pod_scraper.go:49)(pods.RunPodInformer) start nodeName=
+
+2024/11/10 21:16:50 [whatap-node-helper](kubeClient.go:40)(client.GetKubernetesClient) success load client
+2024/11/10 21:16:50 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:16:50 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:16:50 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:16:50 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:16:50 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:16:50 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:16:50 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:24:34 
+2024/11/10 21:24:34 ## OPEN LOG FILE  boot  20241110 12:24:34.778 ##
+2024/11/10 21:24:34 
+2024/11/10 21:24:34 [run cadvisor](cadvisor_helper.go:25)(main.main) port=6801
+
+2024/11/10 21:24:34 [whatap-node-helper](pod_scraper.go:49)(pods.RunPodInformer) start nodeName=
+
+2024/11/10 21:24:34 [whatap-node-helper](kubeClient.go:40)(client.GetKubernetesClient) success load client
+2024/11/10 21:24:34 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:24:34 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:24:34 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:24:34 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:24:34 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:24:34 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
+2024/11/10 21:24:34 [whatap-node-helper](pod_scraper.go:94)(pods.podEventHandler) pod.Spec.NodeName=minikube, nodename(env)=
