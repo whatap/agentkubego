@@ -1,5 +1,5 @@
-# Define a stage for whatap/kube_mon image to retrieve necessary files
-FROM whatap/kube_mon_dev:1.7.15-sec AS whatap_kube_mon
+# Define a stage for kube_mon image to retrieve necessary files
+#FROM whatap/kube_mon_dev:1.7.15-sec AS whatap_kube_mon
 
 # ===Build cadvisor_helper Binary ===
 FROM golang:1.22.7-alpine3.20 AS whatap_cadvisor_helper_build
@@ -23,6 +23,19 @@ RUN pwd
 RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o cadvisor_helper ./cadvisor/cmd/cadvisor-helper/cadvisor_helper.go
 
 RUN ls /data/agent/node
+
+# ===Build debugger Binary ===
+FROM golang:1.22.7-alpine3.20 AS whatap_debugger_build
+ARG TARGETOS
+ARG TARGETARCH
+RUN echo "Kubernetes Node Debugger Build is running"
+WORKDIR /data/agent/tools
+COPY . .
+RUN go mod download
+RUN pwd
+RUN --mount=type=cache,target="/root/.cache/go-build" GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_debugger ./debugger/cmd/whatap-debugger/whatap_debugger.go
+
+RUN ls /data/agent/tools
 
 # === Build whatap_control_plane_helper Binary ===
 FROM --platform=${BUILDPLATFORM} golang:1.22.7-alpine3.20 AS whatap_control_plane_helper_build
@@ -59,8 +72,8 @@ RUN mkdir /data/agent/tools
 RUN mkdir /data/agent/sidecar
 COPY --from=whatap_cadvisor_helper_build /data/agent/node/cadvisor_helper ./node
 COPY --from=whatap_control_plane_helper_build /data/agent/master/whatap_control_plane_helper ./master
-COPY --from=whatap_kube_mon /data/agent/tools/whatap_debugger ./tools
-COPY --from=whatap_kube_mon /data/agent/sidecar/whatap_sidecar ./sidecar
+COPY --from=whatap_debugger_build /data/agent/tools/whatap_debugger ./tools
+#COPY --from=whatap_kube_mon /data/agent/sidecar/whatap_sidecar ./sidecar
 RUN apk add --no-cache bash
 RUN apk add --no-cache curl
 RUN apk add --no-cache jq
