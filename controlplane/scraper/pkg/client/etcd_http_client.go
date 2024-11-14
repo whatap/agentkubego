@@ -16,13 +16,13 @@ func init() {
 		// PEM 인증서와 키파일 로드
 		cert, err := tls.LoadX509KeyPair(config.Conf.EtcdClientCertPath, config.Conf.EtcdClientKeyPath)
 		if err != nil {
-			log.Fatalf("Error loading key pair: %v", err)
+			log.Printf("Error loading key pair: %v", err)
 		}
 
 		// 루트 CA 로드
 		caCert, err := os.ReadFile(config.Conf.EtcdCaCertPath)
 		if err != nil {
-			log.Fatalf("Error reading CA certificate: %v", err)
+			log.Printf("Error reading CA certificate: %v", err)
 		}
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)

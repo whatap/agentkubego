@@ -49,7 +49,7 @@ func fetchMetrics(url string, wg *sync.WaitGroup, dataChan chan<- MetricsData) {
 	etcdClient := client.GetEtcdClient()
 	resp, err := etcdClient.Get(url)
 	if err != nil {
-		log.Fatalf("Error making request: %v", err)
+		log.Printf("Error making request: %v", err)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -60,13 +60,13 @@ func fetchMetrics(url string, wg *sync.WaitGroup, dataChan chan<- MetricsData) {
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("Error reading response body: %v", err)
+		log.Printf("Error reading response body: %v", err)
 	}
 
 	var parser expfmt.TextParser
 	families, err := parser.TextToMetricFamilies(strings.NewReader(string(responseBody)))
 	if err != nil {
-		log.Fatalf("Error parsing response body: %v, %s", err, string(responseBody))
+		log.Printf("Error parsing response body: %v, %s", err, string(responseBody))
 	}
 	dataChan <- MetricsData{
 		url,
