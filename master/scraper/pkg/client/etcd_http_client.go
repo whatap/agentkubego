@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-var client *http.Client
+var etcdClient *http.Client
 
 func init() {
 	if config.Conf.CollectEtcdMonitoringEnabled {
@@ -33,7 +33,7 @@ func init() {
 			RootCAs:            caCertPool,
 			InsecureSkipVerify: false,
 		}
-		client = &http.Client{
+		etcdClient = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: tlsConfig,
 			},
@@ -42,5 +42,5 @@ func init() {
 }
 
 func GetEtcdClient() *http.Client {
-	return client
+	return etcdClient
 }
