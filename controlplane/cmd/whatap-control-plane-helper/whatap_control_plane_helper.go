@@ -4,7 +4,8 @@ import (
 	"github.com/whatap/kube/controlplane/pkg/config"
 	"github.com/whatap/kube/controlplane/router"
 	"github.com/whatap/kube/controlplane/scraper/etcd"
-	"github.com/whatap/kube/controlplane/scraper/kube-apiserver"
+	kube_apiserver "github.com/whatap/kube/controlplane/scraper/kube-apiserver"
+	kube_scheduler "github.com/whatap/kube/controlplane/scraper/kube-scheduler"
 	"log"
 )
 
@@ -28,7 +29,7 @@ func main() {
 
 	if config.Conf.CollectKubeSchedulerMonitoringEnabled {
 		log.Println("kube-scheduler monitoring config is enabled. kube-scheduler metrics scraper started...")
-		etcd.Do()
+		kube_scheduler.Do()
 	} else {
 		log.Println("kube-scheduler monitoring config is disabled.")
 	}
