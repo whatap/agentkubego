@@ -39,8 +39,8 @@ func GetApiserverRequestDurationSeconds(w http.ResponseWriter, r *http.Request) 
 				labelMap["verb"] = value
 			case "version":
 				labelMap["version"] = value
-			case "instance":
-				labelMap["instance"] = value
+			case "Instance":
+				labelMap["Instance"] = value
 			}
 		}
 
@@ -53,7 +53,7 @@ func GetApiserverRequestDurationSeconds(w http.ResponseWriter, r *http.Request) 
 			labelMap["subresource"],
 			labelMap["verb"],
 			labelMap["version"],
-			labelMap["instance"],
+			labelMap["Instance"],
 			m.GetHistogram().GetSampleCount()}
 		count = append(count, secondsCount)
 
@@ -66,7 +66,7 @@ func GetApiserverRequestDurationSeconds(w http.ResponseWriter, r *http.Request) 
 			labelMap["subresource"],
 			labelMap["verb"],
 			labelMap["version"],
-			labelMap["instance"],
+			labelMap["Instance"],
 			m.GetHistogram().GetSampleSum()}
 		sum = append(sum, secondsSum)
 
@@ -81,7 +81,7 @@ func GetApiserverRequestDurationSeconds(w http.ResponseWriter, r *http.Request) 
 			data.Subresource = labelMap["subresource"]
 			data.Verb = labelMap["verb"]
 			data.Version = labelMap["version"]
-			data.Instance = labelMap["instance"]
+			data.Instance = labelMap["Instance"]
 			data.Le = strconv.FormatFloat(histogram.GetUpperBound(), 'f', -1, 64)
 			data.CumulativeCount = histogram.GetCumulativeCount()
 			buckets = append(buckets, data)
@@ -128,7 +128,7 @@ func GetApiserverRequestTotal(w http.ResponseWriter, r *http.Request) {
 				data.Verb = value
 			case "version":
 				data.Version = value
-			case "instance":
+			case "Instance":
 				data.Instance = value
 			}
 		}
@@ -153,7 +153,7 @@ func GetApiserverCurrentInflightRequest(w http.ResponseWriter, r *http.Request) 
 			switch name {
 			case "request_kind":
 				data.RequestKind = value
-			case "instance":
+			case "Instance":
 				data.Instance = value
 			}
 		}
@@ -179,7 +179,7 @@ func GetApiserverAuditLevelTotal(w http.ResponseWriter, r *http.Request) {
 			switch name {
 			case "level":
 				data.Level = value
-			case "instance":
+			case "Instance":
 				data.Instance = value
 			}
 		}
@@ -202,7 +202,7 @@ func GetGoGoroutines(w http.ResponseWriter, r *http.Request) {
 			name := l.GetName()
 			value := l.GetValue()
 			switch name {
-			case "instance":
+			case "Instance":
 				data.Instance = value
 			}
 		}
@@ -225,7 +225,7 @@ func GetGoThreads(w http.ResponseWriter, r *http.Request) {
 			name := l.GetName()
 			value := l.GetValue()
 			switch name {
-			case "instance":
+			case "Instance":
 				data.Instance = value
 			}
 		}
@@ -256,21 +256,21 @@ func GetEtcdRequestDurationSeconds(w http.ResponseWriter, r *http.Request) {
 				labelMap["operation"] = value
 			case "type":
 				labelMap["type"] = value
-			case "instance":
-				labelMap["instance"] = value
+			case "Instance":
+				labelMap["Instance"] = value
 			}
 		}
 		sampleCount := EtcdRequestDurationSecondsCount{
 			labelMap["operation"],
 			labelMap["type"],
-			labelMap["instance"],
+			labelMap["Instance"],
 			m.GetHistogram().GetSampleCount()}
 		count = append(count, sampleCount)
 
 		secondsSum := EtcdRequestDurationSecondsSum{
 			labelMap["operation"],
 			labelMap["type"],
-			labelMap["instance"],
+			labelMap["Instance"],
 			m.GetHistogram().GetSampleSum()}
 		sum = append(sum, secondsSum)
 
@@ -279,7 +279,7 @@ func GetEtcdRequestDurationSeconds(w http.ResponseWriter, r *http.Request) {
 			data := EtcdRequestDurationSecondsBucket{}
 			data.Operation = labelMap["operation"]
 			data.Type = labelMap["type"]
-			data.Instance = labelMap["instance"]
+			data.Instance = labelMap["Instance"]
 			data.Le = strconv.FormatFloat(histogram.GetUpperBound(), 'f', -1, 64)
 			data.CumulativeCount = histogram.GetCumulativeCount()
 			buckets = append(buckets, data)
@@ -313,7 +313,7 @@ type ApiServerRequestTotal struct {
 	Subresource string  `json:"subresource"`
 	Verb        string  `json:"verb"`
 	Version     string  `json:"version"`
-	Instance    string  `json:"instance"`
+	Instance    string  `json:"Instance"`
 	Counter     float64 `json:"counter"`
 }
 
@@ -338,7 +338,7 @@ type ApiserverRequestDurationSecondsBucket struct {
 	Subresource     string `json:"subresource"`
 	Verb            string `json:"verb"`
 	Version         string `json:"version"`
-	Instance        string `json:"instance"`
+	Instance        string `json:"Instance"`
 	Le              string `json:"le"`
 	CumulativeCount uint64 `json:"cumulative_count"`
 }
@@ -352,7 +352,7 @@ type ApiserverRequestDurationSecondsCount struct {
 	Subresource string `json:"subresource"`
 	Verb        string `json:"verb"`
 	Version     string `json:"version"`
-	Instance    string `json:"instance"`
+	Instance    string `json:"Instance"`
 	SampleCount uint64 `json:"sample_count"`
 }
 
@@ -365,7 +365,7 @@ type ApiserverRequestDurationSecondsSum struct {
 	Subresource string  `json:"subresource"`
 	Verb        string  `json:"verb"`
 	Version     string  `json:"version"`
-	Instance    string  `json:"instance"`
+	Instance    string  `json:"Instance"`
 	SampleSum   float64 `json:"sample_sum"`
 }
 
@@ -377,7 +377,7 @@ Type: Gauge
 type ApiserverCurrentInflightRequests struct {
 	RequestKind string  `json:"request_kind"`
 	Gauge       float64 `json:"gauge"`
-	Instance    string  `json:"instance"`
+	Instance    string  `json:"Instance"`
 }
 
 /*
@@ -387,7 +387,7 @@ Type: Counter
 */
 type ApiserverAuditLevelTotal struct {
 	Level    string  `json:"level"`
-	Instance string  `json:"instance"`
+	Instance string  `json:"Instance"`
 	Counter  float64 `json:"counter"`
 }
 
@@ -398,7 +398,7 @@ Type: Gauge
 */
 type GoGoroutines struct {
 	Gauge    float64 `json:"gauge"`
-	Instance string  `json:"instance"`
+	Instance string  `json:"Instance"`
 }
 
 /*
@@ -408,7 +408,7 @@ Type: Gauge
 */
 type GoThreads struct {
 	Gauge    float64 `json:"gauge"`
-	Instance string  `json:"instance"`
+	Instance string  `json:"Instance"`
 }
 
 /*
@@ -425,7 +425,7 @@ type EtcdRequestDurationSeconds struct {
 type EtcdRequestDurationSecondsBucket struct {
 	Operation       string `json:"operation"`
 	Type            string `json:"type"`
-	Instance        string `json:"instance"`
+	Instance        string `json:"Instance"`
 	Le              string `json:"le"`
 	CumulativeCount uint64 `json:"cumulative_count"`
 }
@@ -433,13 +433,13 @@ type EtcdRequestDurationSecondsBucket struct {
 type EtcdRequestDurationSecondsCount struct {
 	Operation   string `json:"operation"`
 	Type        string `json:"type"`
-	Instance    string `json:"instance"`
+	Instance    string `json:"Instance"`
 	SampleCount uint64 `json:"sample_count"`
 }
 
 type EtcdRequestDurationSecondsSum struct {
 	Operation string  `json:"operation"`
 	Type      string  `json:"type"`
-	Instance  string  `json:"instance"`
+	Instance  string  `json:"Instance"`
 	SampleSum float64 `json:"sample_sum"`
 }

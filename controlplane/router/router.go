@@ -45,7 +45,7 @@ func Route() {
 		scheduler router
 	*/
 	if config.Conf.CollectKubeSchedulerMonitoringEnabled {
-		//router.HandleFunc("/etcd-server-has-leader", GetEtcdServerHasLeader).Methods("GET")
+		router.HandleFunc("/kube-scheduler", GetMetrics).Methods("GET")
 	}
 
 	/*

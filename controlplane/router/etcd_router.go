@@ -16,7 +16,7 @@ func GetEtcdServerHasLeader(w http.ResponseWriter, r *http.Request) {
 			name := l.GetName()
 			value := l.GetValue()
 			switch name {
-			case "instance":
+			case "Instance":
 				data.Instance = value
 			}
 		}
@@ -36,7 +36,7 @@ func GetEtcdServerProposalsCommittedTotal(w http.ResponseWriter, r *http.Request
 			name := l.GetName()
 			value := l.GetValue()
 			switch name {
-			case "instance":
+			case "Instance":
 				data.Instance = value
 			}
 		}
@@ -56,7 +56,7 @@ func GetEtcdServerProposalsAppliedTotal(w http.ResponseWriter, r *http.Request) 
 			name := l.GetName()
 			value := l.GetValue()
 			switch name {
-			case "instance":
+			case "Instance":
 				data.Instance = value
 			}
 		}
@@ -76,7 +76,7 @@ func GetEtcdServerLeaderChangesSeenTotal(w http.ResponseWriter, r *http.Request)
 			name := l.GetName()
 			value := l.GetValue()
 			switch name {
-			case "instance":
+			case "Instance":
 				data.Instance = value
 			}
 		}
@@ -88,20 +88,20 @@ func GetEtcdServerLeaderChangesSeenTotal(w http.ResponseWriter, r *http.Request)
 
 type EtcdServerLeaderChangesSeenTotal struct {
 	Counter  float64 `json:"counter"`
-	Instance string  `json:"instance"`
+	Instance string  `json:"Instance"`
 }
 
 type EtcdServerHasLeader struct {
 	Gauge    float64 `json:"gauge"`
-	Instance string  `json:"instance"`
+	Instance string  `json:"Instance"`
 }
 
 type EtcdServerProposalsCommittedTotal struct {
 	Gauge    float64 `json:"gauge"`
-	Instance string  `json:"instance"`
+	Instance string  `json:"Instance"`
 }
 
 type EtcdServerProposalsAppliedTotal struct {
 	Gauge    float64 `json:"gauge"`
-	Instance string  `json:"instance"`
+	Instance string  `json:"Instance"`
 }

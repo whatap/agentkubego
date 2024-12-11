@@ -34,6 +34,7 @@ type Configure struct {
 
 	//scheduler config
 	CollectKubeSchedulerMonitoringEnabled bool
+	KubeSchedulerTlsVerify                bool
 }
 
 func init() {
