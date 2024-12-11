@@ -12,8 +12,13 @@ import (
 var schedulerPodIpCache sync.Map
 
 func StartTrackingSchedulerPod(interval time.Duration) {
+	log.Println("why3")
+
 	ticker := time.NewTicker(interval)
+	log.Println("why4")
+
 	defer ticker.Stop()
+	log.Println("why5")
 
 	reloadSchedulerInfo()
 	var checkCounting = 0
@@ -34,24 +39,35 @@ func StartTrackingSchedulerPod(interval time.Duration) {
 }
 
 func reloadSchedulerInfo() {
+	log.Println("why6")
 	kubeClient, err, done := client.GetKubernetesClient()
+	log.Println("why7")
 
 	if !done {
 		log.Printf("InitializeInformer error getting client: %v\n", err)
 	}
+	log.Println("why8")
+
 	list, err := kubeClient.CoreV1().Pods("kube-system").List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "component=kube-scheduler",
 	})
+	log.Println("why9")
+
 	if err != nil {
 		log.Printf("Error getting kube-scheduler pods: %v\n", err)
 	}
+	log.Println("why10")
 
 	schedulerPodIpCache = sync.Map{}
+	log.Println("why11")
+
 	for _, pod := range list.Items {
 		name := pod.Name
 		podIp := pod.Status.PodIP
 		schedulerPodIpCache.Store(name, podIp)
 	}
+	log.Println("why12")
+
 }
 
 func GetSchedulerPodIps() []string {
