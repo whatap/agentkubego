@@ -96,11 +96,11 @@ func GetSchedulerPendingPods(result map[string]KubeSchedulerByInstance) {
 }
 
 type KubeSchedulerByInstance struct {
-	SchedulerPendingPodsActive        float64 `json:"pending_pods_active"`
-	SchedulerPendingPodsBackoff       float64 `json:"pending_pods_backoff"`
-	SchedulerPendingPodsGated         float64 `json:"pending_pods_gated"`
-	SchedulerPendingPodsUnschedulable float64 `json:"pending_pods_unschedulable"`
-	SchedulerPreemptionAttemptsTotal  float64 `json:"preemption_attempts_total"`
-	SchedulerPreemptionVictimCount    uint64  `json:"preemption_victim_count"`
+	SchedulerPendingPodsActive        float64 `json:"pendingPodsActive"`
+	SchedulerPendingPodsBackoff       float64 `json:"pendingPodsBackoff"`
+	SchedulerPendingPodsGated         float64 `json:"pendingPodsGated"`
+	SchedulerPendingPodsUnschedulable float64 `json:"pendingPodsUnschedulable"`
+	SchedulerPreemptionAttemptsTotal  float64 `json:"preemptionAttemptsTotal"`
+	SchedulerPreemptionVictimCount    uint64  `json:"preemptionVictimCount"`
 	Instance                          string  `json:"instance"`
 }
