@@ -15,29 +15,22 @@ import (
 )
 
 func Do() {
-	log.Println("why1")
 	go StartTrackingSchedulerPod(1 * time.Minute)
-	log.Println("why2")
 	go scrap()
 
 }
 
 func scrap() {
-	log.Println("why13")
 
 	collectMetrics()
-	log.Println("why14")
 
 	ticker := time.NewTicker(time.Second * time.Duration(config.Conf.Cycle))
-	log.Println("why15")
 
 	defer ticker.Stop()
-	log.Println("why16")
 
 	for range ticker.C {
 		collectMetrics()
 	}
-	log.Println("why17")
 
 }
 
