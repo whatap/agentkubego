@@ -19,21 +19,12 @@ func GetMetrics(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSchedulerPreemptionAttemptsTotal(result map[string]KubeSchedulerByInstance) {
-	cache := kube_scheduler.GetCache("scheduler_preemption_attempts_total")
+	cache := kube_scheduler.GetAttemptsTotalCache("scheduler_preemption_attempts_total")
 	if cache != nil {
-		for _, data := range cache {
-			counter := data.GetCounter()
-			label := data.GetLabel()
-			for _, value := range label {
-				if value.GetName() == "instance" {
-					instanceVal := value.GetValue()
-					resultCopy := result[instanceVal]
-					resultCopy.Instance = instanceVal
-					resultCopy.SchedulerPreemptionAttemptsTotal = counter.GetValue()
-					result[instanceVal] = resultCopy
-					break
-				}
-			}
+		for _, v := range cache {
+			r := result[v.Instance]
+			r.SchedulerPreemptionAttemptsTotal = v.SchedulerPreemptionAttemptsTotal
+			result[v.Instance] = r
 		}
 	}
 }

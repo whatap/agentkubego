@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	prevSchedulerMetricsCache    map[string]*io_prometheus_client.MetricFamily
 	currentSchedulerMetricsCache map[string]*io_prometheus_client.MetricFamily
 	cacheMutex                   sync.RWMutex // 동시 접근을 위한 Mutex
 )
@@ -34,4 +35,60 @@ func SetCache(rawMetric map[string]*io_prometheus_client.MetricFamily) {
 	defer cacheMutex.Unlock()
 
 	currentSchedulerMetricsCache = rawMetric
+}
+
+type AttemptsTotal struct {
+	SchedulerPreemptionAttemptsTotal float64 `json:"preemptionAttemptsTotal"`
+	Instance                         string  `json:"instance"`
+}
+
+func GetAttemptsTotalCache(familyName string) []AttemptsTotal {
+	if prevSchedulerMetricsCache[familyName] == nil {
+		prevSchedulerMetricsCache = make(map[string]*io_prometheus_client.MetricFamily)
+		prevSchedulerMetricsCache[familyName] = currentSchedulerMetricsCache[familyName]
+		return nil
+	} else {
+		family := currentSchedulerMetricsCache[familyName]
+		metric := family.GetMetric()
+		var results []AttemptsTotal
+		//metrics
+		for _, m := range metric {
+			label := m.GetLabel()
+			//label
+			for _, l := range label {
+				if l.GetName() == "instance" {
+					instance := l.GetValue()
+					currentValue := m.GetCounter().GetValue()
+
+					metricFamily := prevSchedulerMetricsCache[familyName]
+					for _, mm := range metricFamily.GetMetric() {
+						getLabel := mm.GetLabel()
+						for _, ll := range getLabel {
+							if ll.GetName() == "instance" {
+								prevInstance := ll.GetValue()
+								prevValue := mm.GetCounter().GetValue()
+								if instance == prevInstance {
+									result := currentValue - prevValue
+									if result < 0 {
+										var box = AttemptsTotal{
+											Instance:                         instance,
+											SchedulerPreemptionAttemptsTotal: 0,
+										}
+										results = append(results, box)
+									} else {
+										var box = AttemptsTotal{
+											Instance:                         instance,
+											SchedulerPreemptionAttemptsTotal: result,
+										}
+										results = append(results, box)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return results
+	}
 }
