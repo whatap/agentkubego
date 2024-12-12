@@ -37,9 +37,66 @@ func SetCache(rawMetric map[string]*io_prometheus_client.MetricFamily) {
 	currentSchedulerMetricsCache = rawMetric
 }
 
+type Victims struct {
+	SchedulerPreemptionVictims uint64 `json:"preemptionAttemptsTotal"`
+	Instance                   string `json:"instance"`
+}
+
 type AttemptsTotal struct {
 	SchedulerPreemptionAttemptsTotal float64 `json:"preemptionAttemptsTotal"`
 	Instance                         string  `json:"instance"`
+}
+
+func GetVictims(familyName string) []Victims {
+	if prevSchedulerMetricsCache[familyName] == nil {
+		prevSchedulerMetricsCache = make(map[string]*io_prometheus_client.MetricFamily)
+		prevSchedulerMetricsCache[familyName] = currentSchedulerMetricsCache[familyName]
+		return nil
+	} else {
+		family := currentSchedulerMetricsCache[familyName]
+		metric := family.GetMetric()
+		var results []Victims
+		//metrics
+		for _, m := range metric {
+			label := m.GetLabel()
+			//label
+			for _, l := range label {
+				if l.GetName() == "instance" {
+					instance := l.GetValue()
+					currentValue := m.GetHistogram().GetSampleCount()
+
+					metricFamily := prevSchedulerMetricsCache[familyName]
+					for _, mm := range metricFamily.GetMetric() {
+						getLabel := mm.GetLabel()
+						for _, ll := range getLabel {
+							if ll.GetName() == "instance" {
+								prevInstance := ll.GetValue()
+								prevValue := mm.GetHistogram().GetSampleCount()
+								if instance == prevInstance {
+									result := currentValue - prevValue
+									if result < 0 {
+										var box = Victims{
+											Instance:                   instance,
+											SchedulerPreemptionVictims: 0,
+										}
+										results = append(results, box)
+									} else {
+										var box = Victims{
+											Instance:                   instance,
+											SchedulerPreemptionVictims: result,
+										}
+										results = append(results, box)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		prevSchedulerMetricsCache[familyName] = currentSchedulerMetricsCache[familyName]
+		return results
+	}
 }
 
 func GetAttemptsTotalCache(familyName string) []AttemptsTotal {

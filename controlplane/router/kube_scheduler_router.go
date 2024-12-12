@@ -30,22 +30,12 @@ func GetSchedulerPreemptionAttemptsTotal(result map[string]KubeSchedulerByInstan
 }
 
 func GetSchedulerPreemptionVictims(result map[string]KubeSchedulerByInstance) {
-	cache := kube_scheduler.GetCache("scheduler_preemption_victims")
+	cache := kube_scheduler.GetVictims("scheduler_preemption_victims")
 	if cache != nil {
-		for _, data := range cache {
-			histogram := data.GetHistogram()
-			count := histogram.GetSampleCount()
-			label := data.GetLabel()
-			for _, value := range label {
-				if value.GetName() == "instance" {
-					instanceVal := value.GetValue()
-					resultCopy := result[instanceVal]
-					resultCopy.Instance = instanceVal
-					resultCopy.SchedulerPreemptionVictimCount = count
-					result[instanceVal] = resultCopy
-					break
-				}
-			}
+		for _, v := range cache {
+			r := result[v.Instance]
+			r.SchedulerPreemptionVictimCount = v.SchedulerPreemptionVictims
+			result[v.Instance] = r
 		}
 	}
 }
