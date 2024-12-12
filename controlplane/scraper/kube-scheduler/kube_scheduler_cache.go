@@ -38,8 +38,8 @@ func SetCache(rawMetric map[string]*io_prometheus_client.MetricFamily) {
 }
 
 type Victims struct {
-	SchedulerPreemptionVictims uint64 `json:"preemptionAttemptsTotal"`
-	Instance                   string `json:"instance"`
+	SchedulerPreemptionVictimCount uint64 `json:"preemptionAttemptsTotal"`
+	Instance                       string `json:"instance"`
 }
 
 type AttemptsTotal struct {
@@ -76,14 +76,14 @@ func GetVictims(familyName string) []Victims {
 									result := currentValue - prevValue
 									if result < 0 {
 										var box = Victims{
-											Instance:                   instance,
-											SchedulerPreemptionVictims: 0,
+											Instance:                       instance,
+											SchedulerPreemptionVictimCount: 0,
 										}
 										results = append(results, box)
 									} else {
 										var box = Victims{
-											Instance:                   instance,
-											SchedulerPreemptionVictims: result,
+											Instance:                       instance,
+											SchedulerPreemptionVictimCount: result,
 										}
 										results = append(results, box)
 									}

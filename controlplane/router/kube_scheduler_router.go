@@ -34,7 +34,7 @@ func GetSchedulerPreemptionVictims(result map[string]KubeSchedulerByInstance) {
 	if cache != nil {
 		for _, v := range cache {
 			r := result[v.Instance]
-			r.SchedulerPreemptionVictimCount = v.SchedulerPreemptionVictims
+			r.SchedulerPreemptionVictimCount = v.SchedulerPreemptionVictimCount
 			result[v.Instance] = r
 		}
 	}
