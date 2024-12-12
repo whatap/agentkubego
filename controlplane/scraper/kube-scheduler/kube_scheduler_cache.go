@@ -89,6 +89,7 @@ func GetAttemptsTotalCache(familyName string) []AttemptsTotal {
 				}
 			}
 		}
+		prevSchedulerMetricsCache[familyName] = currentSchedulerMetricsCache[familyName]
 		return results
 	}
 }
