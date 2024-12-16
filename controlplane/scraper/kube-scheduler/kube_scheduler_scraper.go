@@ -42,7 +42,7 @@ func collectMetrics() {
 
 	for _, ip := range ips {
 		wg.Add(1)
-		ip = "https://" + ip + ":10259" + "/metrics"
+		ip = "https://" + ip + ":" + config.Conf.KubeSchedulerPort + config.Conf.KubeSchedulerMetricsEndpoint
 		go fetchMetrics(ip, &wg, dataChan)
 	}
 	go func() {

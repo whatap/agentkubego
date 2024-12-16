@@ -35,6 +35,8 @@ type Configure struct {
 	//scheduler config
 	CollectKubeSchedulerMonitoringEnabled bool
 	KubeSchedulerTlsVerify                bool
+	KubeSchedulerMetricsEndpoint          string
+	KubeSchedulerPort                     string
 }
 
 func init() {
@@ -62,6 +64,8 @@ func init() {
 		EtcdClientKeyPath:            getString("etcd_client_key_path", "/etc/kubernetes/pki/etcd/server.key"),
 
 		CollectKubeSchedulerMonitoringEnabled: getBool("collect_kube_scheduler_monitoring_enabled", "false"),
+		KubeSchedulerMetricsEndpoint:          getString("kube_scheduler_metrics_endpoint", "/metrics"),
+		KubeSchedulerPort:                     getString("kube_scheduler_port", "10259"),
 	}
 
 	printConf()
@@ -95,6 +99,8 @@ func printConf() {
 	log.Println()
 	log.Println("------ kube-scheduler config ------")
 	log.Println("collect_kube_scheduler_monitoring_enabled:", Conf.CollectKubeSchedulerMonitoringEnabled)
+	log.Println("kube_scheduler_metrics_endpoint:", Conf.KubeSchedulerMetricsEndpoint)
+	log.Println("kube_scheduler_port:", Conf.KubeSchedulerPort)
 
 }
 
