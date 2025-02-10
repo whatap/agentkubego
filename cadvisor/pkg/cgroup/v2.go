@@ -37,9 +37,9 @@ func GetContainerStatsCgroupV2(prefix string, containerId string, name string, c
 			containerStat.CPUStats.ThrottlingData.ThrottledTime = v
 		} else if key == "nr_throttled" {
 			containerStat.CPUStats.ThrottlingData.ThrottledPeriods = v
-		} else if key == "usage_usec" {
-			containerStat.CPUStats.CPUUsage.UsageInUsermode = v / 10000
 		} else if key == "user_usec" {
+			containerStat.CPUStats.CPUUsage.UsageInUsermode = v / 10000
+		} else if key == "system_usec" {
 			containerStat.CPUStats.CPUUsage.UsageInKernelmode = v / 10000
 		}
 
