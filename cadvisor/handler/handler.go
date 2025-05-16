@@ -651,8 +651,6 @@ func getDiskUsage() (ret []byte, err error) {
 		blksize := int32(stat.Bsize)
 		inodeTotal := int64(stat.Files)
 		inodeUsed := int64(stat.Files - stat.Ffree)
-		inodeTotal = 3019898880
-		logutil.Infof("0516TEST", "idnodeTotal=%v", inodeUsed)
 		inodeUsedPercent := float32(100.0) * float32(inodeUsed) / float32(inodeTotal)
 		major, _ := strconv.ParseInt(majorminor[0], 10, 32)
 		minor, _ := strconv.ParseInt(majorminor[1], 10, 32)
