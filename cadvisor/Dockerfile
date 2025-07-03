@@ -5,12 +5,18 @@ ARG TARGETARCH
 RUN echo "Kubernetes Cadvisor Helper Build is running"
 
 WORKDIR /data/agent/node
+
+# Copy go.mod and go.sum first for dependency resolution
+COPY go.mod go.sum ./
 COPY ./cadvisor .
+
 RUN echo "(1)Install base GCC"
 RUN apk add build-base
 RUN echo "(2)Build cadvisor Binary"
 RUN pwd
-RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o cadvisor_helper ./cadvisor/cmd/cadvisor-helper/cadvisor_helper.go
+
+# Fix the build path - after copying ./cadvisor, the correct path is ./cmd/cadvisor-helper/
+RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o cadvisor_helper ./cmd/cadvisor-helper/cadvisor_helper.go
 
 RUN ls /data/agent/node
 
