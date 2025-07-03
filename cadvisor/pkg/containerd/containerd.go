@@ -253,6 +253,12 @@ func GetContainerInspect(containerId string) (string, error) {
 	}
 	cinfo.RestartCount = restartCount
 
+	// Get container PID
+	pid, errpid := proc.GetContainerPid(containerId)
+	if errpid == nil {
+		cinfo.State.Pid = pid
+	}
+
 	container, ctx, errld := whatap_client.LoadContainerD(containerId)
 	if errld != nil {
 		return "", errld
