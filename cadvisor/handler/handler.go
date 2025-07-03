@@ -15,6 +15,7 @@ import (
 	whatap_crio "github.com/whatap/kube/cadvisor/pkg/crio"
 	whatap_docker "github.com/whatap/kube/cadvisor/pkg/docker"
 	whatap_model "github.com/whatap/kube/cadvisor/pkg/model"
+	"github.com/whatap/kube/cadvisor/pkg/proc"
 	whatap_osinfo "github.com/whatap/kube/cadvisor/tools/osinfo"
 	"github.com/whatap/kube/cadvisor/tools/util/runtimeutil"
 	"github.com/whatap/kube/tools/util/logutil"
@@ -85,7 +86,15 @@ func GetContainerInspectHandler(w http.ResponseWriter, req *http.Request) {
 	} else if containerRuntime == "containerd" {
 		content, err = whatap_containerd.GetContainerInspect(containerId)
 	} else if containerRuntime == "crio" {
-		content, err = whatap_crio.GetContainerInspect(HOSTPATH_PREFIX, containerId)
+		// Get unified PID using proc.GetContainerPid
+		pid, errpid := proc.GetContainerPid(containerId)
+		if errpid == nil {
+			// Use the new function with unified PID
+			content, err = whatap_crio.GetContainerInspectWithPid(HOSTPATH_PREFIX, containerId, pid)
+		} else {
+			// Fall back to original function if PID lookup fails
+			content, err = whatap_crio.GetContainerInspect(HOSTPATH_PREFIX, containerId)
+		}
 	}
 
 	if err != nil {

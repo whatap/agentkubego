@@ -149,12 +149,22 @@ func GetContainerInspect(containerId string) (string, error) {
 	// defer pc.Release()
 	// cli := pc.Conn
 	resp, err := cli.ContainerInspect(context.Background(), containerId)
-	if err == nil {
-		contJson, err := json.Marshal(resp)
-		if err == nil {
-			return string(contJson), nil
-		}
+	if err != nil {
+		return "", err
 	}
+
+	// Get container PID using unified GetContainerPid function
+	pid, errpid := proc.GetContainerPid(containerId)
+	if errpid == nil {
+		// Override Docker API's PID with our unified PID
+		resp.State.Pid = pid
+	}
+
+	contJson, err := json.Marshal(resp)
+	if err == nil {
+		return string(contJson), nil
+	}
+
 	return "", err
 }
 func populateFileKeyValue(prefix string, filename string, callback func(key string, v []int64)) (reterr error) {

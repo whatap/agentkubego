@@ -266,6 +266,10 @@ func GetContainerPid(prefix string, containerId string) (int, error) {
 }
 
 func GetContainerInspect(prefix string, containerId string) (string, error) {
+	return GetContainerInspectWithPid(prefix, containerId, 0)
+}
+
+func GetContainerInspectWithPid(prefix string, containerId string, unifiedPid int) (string, error) {
 	oconfig, err := getOverlayConfig(prefix, containerId)
 	if err != nil {
 		return "", err
@@ -296,7 +300,14 @@ func GetContainerInspect(prefix string, containerId string) (string, error) {
 	default:
 
 	}
-	cinfo.State.Pid = ostate.Pid
+
+	// Use unified PID if provided, otherwise fall back to CRI-O's original PID
+	if unifiedPid > 0 {
+		cinfo.State.Pid = unifiedPid
+	} else {
+		cinfo.State.Pid = ostate.Pid
+	}
+
 	cinfo.LogPath = oconfig.Annotations.IoKubernetesCriOLogPath
 
 	for _, m := range oconfig.Mounts {
