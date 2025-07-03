@@ -142,29 +142,95 @@ func getDockerConfigV2(prefix string, containerId string) (ostate whatap_model.D
 }
 
 func GetContainerInspect(containerId string) (string, error) {
+	logutil.Infof("GetContainerInspect", "Starting Docker container inspect for: %s", containerId)
+
 	cli, err := whatap_client.GetDockerClient()
 	if err != nil {
+		logutil.Errorf("GetContainerInspect", "Failed to get Docker client: %v", err)
 		return "", err
 	}
-	// defer pc.Release()
-	// cli := pc.Conn
+
+	logutil.Infof("GetContainerInspect", "Calling Docker API ContainerInspect for: %s", containerId)
 	resp, err := cli.ContainerInspect(context.Background(), containerId)
 	if err != nil {
+		logutil.Errorf("GetContainerInspect", "Docker API ContainerInspect failed: %v", err)
 		return "", err
 	}
+
+	// 🎯 핵심: Docker API 응답의 Mounts 정보 로깅
+	logutil.Infof("GetContainerInspect", "=== DOCKER API RESPONSE ANALYSIS ===")
+	logutil.Infof("GetContainerInspect", "Container ID: %s", resp.ID)
+	logutil.Infof("GetContainerInspect", "Container Name: %s", resp.Name)
+
+	// Mounts 필드 상세 분석
+	if resp.Mounts == nil {
+		logutil.Infof("GetContainerInspect", "❌ resp.Mounts is NULL")
+	} else {
+		logutil.Infof("GetContainerInspect", "✅ resp.Mounts is NOT NULL, length: %d", len(resp.Mounts))
+
+		if len(resp.Mounts) == 0 {
+			logutil.Infof("GetContainerInspect", "⚠️  resp.Mounts is empty array")
+		} else {
+			logutil.Infof("GetContainerInspect", "📁 Found %d mount(s):", len(resp.Mounts))
+			for i, mount := range resp.Mounts {
+				logutil.Infof("GetContainerInspect", "  Mount[%d]: Type=%s, Source=%s, Destination=%s, RW=%v",
+					i, mount.Type, mount.Source, mount.Destination, mount.RW)
+			}
+		}
+	}
+
+	// Mounts를 JSON으로 직렬화해서 확인
+	if resp.Mounts != nil {
+		mountsJSON, err := json.Marshal(resp.Mounts)
+		if err == nil {
+			logutil.Infof("GetContainerInspect", "📄 Mounts JSON: %s", string(mountsJSON))
+		} else {
+			logutil.Errorf("GetContainerInspect", "Failed to marshal Mounts to JSON: %v", err)
+		}
+	}
+
+	// 전체 응답 구조 확인 (일부만)
+	logutil.Infof("GetContainerInspect", "=== DOCKER RESPONSE STRUCTURE ===")
+	logutil.Infof("GetContainerInspect", "State.Status: %s", resp.State.Status)
+	logutil.Infof("GetContainerInspect", "State.Pid: %d", resp.State.Pid)
+	logutil.Infof("GetContainerInspect", "Image: %s", resp.Image)
 
 	// Get container PID using unified GetContainerPid function
 	pid, errpid := proc.GetContainerPid(containerId)
 	if errpid == nil {
-		// Override Docker API's PID with our unified PID
+		logutil.Infof("GetContainerInspect", "🔄 Overriding Docker PID %d with unified PID %d", resp.State.Pid, pid)
 		resp.State.Pid = pid
+	} else {
+		logutil.Infof("GetContainerInspect", "Failed to get unified PID, using Docker PID %d: %v", resp.State.Pid, errpid)
+	}
+
+	// 최종 JSON 직렬화 전에 Mounts 다시 확인
+	logutil.Infof("GetContainerInspect", "=== BEFORE JSON MARSHAL ===")
+	if resp.Mounts == nil {
+		logutil.Infof("GetContainerInspect", "❌ resp.Mounts is still NULL before marshaling")
+	} else {
+		logutil.Infof("GetContainerInspect", "✅ resp.Mounts has %d items before marshaling", len(resp.Mounts))
 	}
 
 	contJson, err := json.Marshal(resp)
 	if err == nil {
+		logutil.Infof("GetContainerInspect", "✅ Successfully marshaled response to JSON")
+
+		// JSON에서 Mounts 부분만 추출해서 확인
+		var parsed map[string]interface{}
+		if json.Unmarshal(contJson, &parsed) == nil {
+			if mounts, ok := parsed["Mounts"]; ok {
+				mountsJSON, _ := json.Marshal(mounts)
+				logutil.Infof("GetContainerInspect", "📄 Final JSON Mounts: %s", string(mountsJSON))
+			} else {
+				logutil.Infof("GetContainerInspect", "❌ No 'Mounts' field found in final JSON")
+			}
+		}
+
 		return string(contJson), nil
 	}
 
+	logutil.Errorf("GetContainerInspect", "❌ Failed to marshal response to JSON: %v", err)
 	return "", err
 }
 func populateFileKeyValue(prefix string, filename string, callback func(key string, v []int64)) (reterr error) {
