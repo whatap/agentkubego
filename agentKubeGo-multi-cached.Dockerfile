@@ -15,7 +15,8 @@ COPY . .
 RUN go mod download
 # Install build dependencies
 RUN echo "(1)Install base GCC"
-RUN apk add build-base linux-headers musl-dev
+RUN apk add build-base
+RUN apk add --no-cache linux-headers musl-dev gcc-aarch64-linux-musl
 RUN echo "(2)Build cadvisor Binary"
 RUN pwd
 
@@ -32,7 +33,8 @@ RUN echo "Kubernetes Node Debugger Build is running"
 WORKDIR /data/agent/tools
 COPY . .
 RUN go mod download
-RUN apk add build-base linux-headers musl-dev
+RUN apk add build-base
+RUN apk add --no-cache linux-headers musl-dev gcc-aarch64-linux-musl
 RUN pwd
 RUN --mount=type=cache,target="/root/.cache/go-build" GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_debugger ./debugger/cmd/whatap-debugger/whatap_debugger.go
 
