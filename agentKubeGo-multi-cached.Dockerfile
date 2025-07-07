@@ -2,7 +2,7 @@
 #FROM whatap/kube_mon_dev:1.7.15-sec AS whatap_kube_mon
 
 # ===Build cadvisor_helper Binary ===
-FROM --platform=$BUILDPLATFORM debian:bookworm AS whatap_cadvisor_helper_build
+FROM --platform=$BUILDPLATFORM golang:1.22.7 AS whatap_cadvisor_helper_build
 
 # Build arguments for cross-platform compilation
 ARG TARGETOS
@@ -26,7 +26,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 GOOS=$TARGET
 RUN ls /data/agent/node
 
 # ===Build debugger Binary ===
-FROM --platform=$BUILDPLATFORM debian:bookworm AS whatap_debugger_build
+FROM --platform=$BUILDPLATFORM golang:1.22.7 AS whatap_debugger_build
 ARG TARGETOS
 ARG TARGETARCH
 RUN echo "Kubernetes Node Debugger Build is running"
