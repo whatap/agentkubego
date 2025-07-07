@@ -2,7 +2,7 @@
 #FROM whatap/kube_mon_dev:1.7.15-sec AS whatap_kube_mon
 
 # ===Build cadvisor_helper Binary ===
-FROM golang:1.22.7-alpine3.20 AS whatap_cadvisor_helper_build
+FROM --platform=$BUILDPLATFORM debian:bookworm AS whatap_cadvisor_helper_build
 
 # Build arguments for cross-platform compilation
 ARG TARGETOS
@@ -15,7 +15,8 @@ COPY . .
 RUN go mod download
 # Install build dependencies
 RUN echo "(1)Install base GCC"
-RUN apk add build-base
+RUN apt-get update && apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross build-essential ca-certificates
+# RUN apk add build-base
 RUN echo "(2)Build cadvisor Binary"
 RUN pwd
 
@@ -25,7 +26,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 GOOS=$TARGET
 RUN ls /data/agent/node
 
 # ===Build debugger Binary ===
-FROM golang:1.22.7-alpine3.20 AS whatap_debugger_build
+FROM --platform=$BUILDPLATFORM debian:bookworm AS whatap_debugger_build
 ARG TARGETOS
 ARG TARGETARCH
 RUN echo "Kubernetes Node Debugger Build is running"
@@ -33,6 +34,11 @@ WORKDIR /data/agent/tools
 COPY . .
 RUN go mod download
 RUN pwd
+
+# Install build dependencies
+RUN echo "(1)Install base GCC"
+RUN apt-get update && apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross build-essential ca-certificates
+
 RUN --mount=type=cache,target="/root/.cache/go-build" GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_debugger ./debugger/cmd/whatap-debugger/whatap_debugger.go
 
 RUN ls /data/agent/tools
