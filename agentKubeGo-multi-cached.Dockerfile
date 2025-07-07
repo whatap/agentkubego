@@ -16,12 +16,12 @@ RUN go mod download
 # Install build dependencies
 RUN echo "(1)Install base GCC"
 RUN apk add build-base
-RUN apk add --no-cache linux-headers musl-dev gcc-aarch64-linux-musl
 RUN echo "(2)Build cadvisor Binary"
 RUN pwd
 
 # Build cadvisor_helper binary with specified OS and architecture
-RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o cadvisor_helper ./cadvisor/cmd/cadvisor-helper/cadvisor_helper.go
+# RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o cadvisor_helper ./cadvisor/cmd/cadvisor-helper/cadvisor_helper.go
+RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o cadvisor_helper ./cadvisor/cmd/cadvisor-helper/cadvisor_helper.go
 
 RUN ls /data/agent/node
 
@@ -33,10 +33,9 @@ RUN echo "Kubernetes Node Debugger Build is running"
 WORKDIR /data/agent/tools
 COPY . .
 RUN go mod download
-RUN apk add build-base
-RUN apk add --no-cache linux-headers musl-dev gcc-aarch64-linux-musl
 RUN pwd
-RUN --mount=type=cache,target="/root/.cache/go-build" GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_debugger ./debugger/cmd/whatap-debugger/whatap_debugger.go
+# RUN --mount=type=cache,target="/root/.cache/go-build" GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_debugger ./debugger/cmd/whatap-debugger/whatap_debugger.go
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_debugger ./debugger/cmd/whatap-debugger/whatap_debugger.go
 
 RUN ls /data/agent/tools
 
@@ -56,7 +55,8 @@ WORKDIR /data/agent/master
 COPY . .
 RUN go mod download
 # Build whatap_control_plane_helper binary with specified OS and architecture
-RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_control_plane_helper ./controlplane/cmd/whatap-control-plane-helper/whatap_control_plane_helper.go
+# RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_control_plane_helper ./controlplane/cmd/whatap-control-plane-helper/whatap_control_plane_helper.go
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_control_plane_helper ./controlplane/cmd/whatap-control-plane-helper/whatap_control_plane_helper.go
 RUN ls /data/agent/master
 
 # === Final Packaging ===
