@@ -2,7 +2,7 @@
 #FROM whatap/kube_mon_dev:1.7.15-sec AS whatap_kube_mon
 
 # ===Build cadvisor_helper Binary ===
-FROM golang:1.22.7-alpine3.20 AS whatap_cadvisor_helper_build
+FROM --platform=$BUILDPLATFORM golang:1.22.7 AS whatap_cadvisor_helper_build
 
 # Build arguments for cross-platform compilation
 ARG TARGETOS
@@ -15,17 +15,29 @@ COPY . .
 RUN go mod download
 # Install build dependencies
 RUN echo "(1)Install base GCC"
-RUN apk add build-base
+RUN apt-get update && \
+    if [ "$TARGETARCH" = "arm64" ]; then \
+      apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross ; \
+    else \
+      apt-get install -y gcc ; \
+    fi && \
+    apt-get install -y build-essential ca-certificates
+# RUN apk add build-base
 RUN echo "(2)Build cadvisor Binary"
 RUN pwd
 
 # Build cadvisor_helper binary with specified OS and architecture
-RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o cadvisor_helper ./cadvisor/cmd/cadvisor-helper/cadvisor_helper.go
+# RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o cadvisor_helper ./cadvisor/cmd/cadvisor-helper/cadvisor_helper.go
+RUN --mount=type=cache,target="/root/.cache/go-build" \
+    sh -c 'CC=$( [ "$TARGETARCH" = "arm64" ] && echo "aarch64-linux-gnu-gcc" || echo "gcc" ) && \
+           CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH CC=$CC \
+           go build -ldflags="-w -extldflags \"-static\"" \
+           -o cadvisor_helper ./cadvisor/cmd/cadvisor-helper/cadvisor_helper.go'
 
 RUN ls /data/agent/node
 
 # ===Build debugger Binary ===
-FROM golang:1.22.7-alpine3.20 AS whatap_debugger_build
+FROM --platform=$BUILDPLATFORM golang:1.22.7 AS whatap_debugger_build
 ARG TARGETOS
 ARG TARGETARCH
 RUN echo "Kubernetes Node Debugger Build is running"
@@ -33,7 +45,23 @@ WORKDIR /data/agent/tools
 COPY . .
 RUN go mod download
 RUN pwd
-RUN --mount=type=cache,target="/root/.cache/go-build" GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_debugger ./debugger/cmd/whatap-debugger/whatap_debugger.go
+
+# Install build dependencies
+RUN echo "(1)Install base GCC"
+RUN apt-get update && \
+    if [ "$TARGETARCH" = "arm64" ]; then \
+      apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross ; \
+    else \
+      apt-get install -y gcc ; \
+    fi && \
+    apt-get install -y build-essential ca-certificates
+
+# RUN --mount=type=cache,target="/root/.cache/go-build" GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extldflags "-static"' -o whatap_debugger ./debugger/cmd/whatap-debugger/whatap_debugger.go
+RUN --mount=type=cache,target="/root/.cache/go-build" \
+    sh -c 'CC=$( [ "$TARGETARCH" = "arm64" ] && echo "aarch64-linux-gnu-gcc" || echo "gcc" ) && \
+           CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH CC=$CC \
+           go build -ldflags="-w -extldflags \"-static\"" \
+           -o whatap_debugger ./debugger/cmd/whatap-debugger/whatap_debugger.go'
 
 RUN ls /data/agent/tools
 
