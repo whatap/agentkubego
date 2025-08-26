@@ -32,16 +32,22 @@ func InspectWhatapAgentPath(containerID string) (string, error) {
 }
 
 func IsValidAgentPath(path string) bool {
+	// If it's a known kube helper jar, accept
 	if strings.Contains(path, "whatap.agent.kube.jar") {
 		return true
 	}
-	re := regexp.MustCompile(`whatap\.agent-(\d+\.\d+\.\d+)\.jar`)
-	match := re.FindStringSubmatch(path)
-	if match == nil {
-		return false
+	// If it's a JAR, validate version pattern >= 2.2.33
+	if strings.HasSuffix(strings.ToLower(path), ".jar") {
+		re := regexp.MustCompile(`whatap\.agent-(\d+\.\d+\.\d+)\.jar`)
+		match := re.FindStringSubmatch(path)
+		if match == nil {
+			return false
+		}
+		version := match[1]
+		return isVersionGreaterOrEqual(version, "2.2.33")
 	}
-	version := match[1]
-	return isVersionGreaterOrEqual(version, "2.2.33")
+	// Non-jar (python/php/go/dotnet binaries): accept
+	return true
 }
 
 func isVersionGreaterOrEqual(v1, v2 string) bool {

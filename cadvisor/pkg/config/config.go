@@ -3,12 +3,6 @@ package config
 import (
 	"bufio"
 	"fmt"
-	"github.com/magiconair/properties"
-	"github.com/whatap/golib/util/dateutil"
-	"github.com/whatap/golib/util/hash"
-	"github.com/whatap/golib/util/hmap"
-	"github.com/whatap/golib/util/stringutil"
-	"github.com/whatap/kube/tools/util/logutil"
 	"io"
 	"os"
 	"path/filepath"
@@ -17,6 +11,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/magiconair/properties"
+	"github.com/whatap/golib/util/dateutil"
+	"github.com/whatap/golib/util/hash"
+	"github.com/whatap/golib/util/hmap"
+	"github.com/whatap/golib/util/stringutil"
+	"github.com/whatap/kube/tools/util/logutil"
 )
 
 type Config struct {
@@ -35,6 +36,10 @@ type Config struct {
 	ConfBaseAgentHost                      string
 	ConfBaseAgentPort                      int32
 	WhatapJavaAgentPath                    string
+	WhatapPythonAgentPath                  string
+	WhatapPhpAgentPath                     string
+	WhatapGoAgentPath                      string
+	WhatapDotnetAgentPath                  string
 	InspectWhatapAgentPathFromProc         bool
 	CollectVolumeDetailEnabled             bool
 	InjectContainerIdToApmAgentEnabled     bool
@@ -143,6 +148,10 @@ func init() {
 	fmt.Printf("-CollectKubeNodeProcessMetricTargetList: %v\n", whatapConfig.CollectKubeNodeProcessMetricTargetList)
 	fmt.Printf("-InspectWhatapAgentPathFromProc: %v\n", whatapConfig.InspectWhatapAgentPathFromProc)
 	fmt.Printf("-DefaultJavaAgentPath: %v\n", whatapConfig.WhatapJavaAgentPath)
+	fmt.Printf("-DefaultPythonAgentPath: %v\n", whatapConfig.WhatapPythonAgentPath)
+	fmt.Printf("-DefaultPhpAgentPath: %v\n", whatapConfig.WhatapPhpAgentPath)
+	fmt.Printf("-DefaultGoAgentPath: %v\n", whatapConfig.WhatapGoAgentPath)
+	fmt.Printf("-DefaultDotnetAgentPath: %v\n", whatapConfig.WhatapDotnetAgentPath)
 	fmt.Printf("-IsRuntimeDocker: %v\n", whatapConfig.IsRuntimeDocker)
 	fmt.Printf("-IsRuntimeContainerd: %v\n", whatapConfig.IsRuntimeContainerd)
 	fmt.Printf("-IsRuntimeCrio: %v\n", whatapConfig.IsRuntimeCrio)
@@ -309,6 +318,10 @@ func apply() {
 		conf.CollectNfsDiskEnabled = getBoolean("collect_nfs_disk_enabled", true)
 		conf.InjectContainerIdToApmAgentEnabled = getBoolean("inject_container_id_to_apm_agent_enabled", true)
 		conf.WhatapJavaAgentPath = getValueDef("whatap_java_agent_path", "")
+		conf.WhatapPythonAgentPath = getValueDef("whatap_python_agent_path", "")
+		conf.WhatapPhpAgentPath = getValueDef("whatap_php_agent_path", "")
+		conf.WhatapGoAgentPath = getValueDef("whatap_go_agent_path", "")
+		conf.WhatapDotnetAgentPath = getValueDef("whatap_dotnet_agent_path", "")
 		conf.InspectWhatapAgentPathFromProc = getBoolean("inspect_whatap_agent_path_from_proc", true)
 		conf.UseCachedMountPointEnabled = getBoolean("use_cached_mount_info_enabled", true)
 		conf.CollectProcessPssEnabled = getBoolean("collect_process_pss_enabled", true)
@@ -597,6 +610,10 @@ func ToString() string {
 	sb.Append("CollectNfsDiskEnabled").Append("=").AppendLine(fmt.Sprintf("%v", conf.CollectNfsDiskEnabled))
 	sb.Append("InjectContainerIdToApmAgentEnabled").Append("=").AppendLine(fmt.Sprintf("%v", conf.ConfBaseAgentPort))
 	sb.Append("WhatapJavaAgentPath").Append("=").AppendLine(fmt.Sprintf("%v", conf.WhatapJavaAgentPath))
+	sb.Append("WhatapPythonAgentPath").Append("=").AppendLine(fmt.Sprintf("%v", conf.WhatapPythonAgentPath))
+	sb.Append("WhatapPhpAgentPath").Append("=").AppendLine(fmt.Sprintf("%v", conf.WhatapPhpAgentPath))
+	sb.Append("WhatapGoAgentPath").Append("=").AppendLine(fmt.Sprintf("%v", conf.WhatapGoAgentPath))
+	sb.Append("WhatapDotnetAgentPath").Append("=").AppendLine(fmt.Sprintf("%v", conf.WhatapDotnetAgentPath))
 	sb.Append("InspectWhatapAgentPathFromProc").Append("=").AppendLine(fmt.Sprintf("%v", conf.InspectWhatapAgentPathFromProc))
 	sb.Append("UseCachedMountPointEnabled").Append("=").AppendLine(fmt.Sprintf("%v", conf.UseCachedMountPointEnabled))
 	return sb.ToString()
