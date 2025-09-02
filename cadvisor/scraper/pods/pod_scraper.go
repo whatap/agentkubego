@@ -26,18 +26,19 @@ var (
 )
 
 type SimpleContainerInfo struct {
-	ContainerName         string
-	ContainerId           string
-	IsApm                 bool
-	ExecProcessed         bool
-	whatapJavaAgentPath   string
-	whatapPythonAgentPath string
-	whatapPhpAgentPath    string
-	whatapGoAgentPath     string
-	whatapDotnetAgentPath string
-	ContainerState        string
-	ProcessPids           []int
-	ProcessInfo           map[string]whatap_model.ProcessInfo
+	ContainerName            string
+	ContainerId              string
+	IsApm                    bool
+	ExecProcessed            bool
+	whatapJavaAgentPath      string
+	whatapPythonAgentPath    string
+	whatapPhpAgentPath       string
+	whatapGoAgentPath        string
+	whatapDotnetAgentPath    string
+	whatapExecutableJavaPath string
+	ContainerState           string
+	ProcessPids              []int
+	ProcessInfo              map[string]whatap_model.ProcessInfo
 }
 
 type SimplePodInfo struct {
@@ -130,15 +131,16 @@ func createSimplePodInfo(pod *corev1.Pod) SimplePodInfo {
 	for _, containerSpec := range pod.Spec.Containers {
 		// container spec 1개씩 까보기
 		containerInfo := SimpleContainerInfo{
-			ContainerName:         containerSpec.Name,
-			ContainerId:           getContainerId(pod.Status.ContainerStatuses, containerSpec.Name),
-			IsApm:                 checkIfApmAgent(containerSpec.Env),
-			whatapJavaAgentPath:   getWhatapJavaAgentPath(containerSpec.Env),
-			whatapPythonAgentPath: getEnv(containerSpec.Env, "WHATAP_PYTHON_AGENT_PATH"),
-			whatapPhpAgentPath:    getEnv(containerSpec.Env, "WHATAP_PHP_AGENT_PATH"),
-			whatapGoAgentPath:     getEnv(containerSpec.Env, "WHATAP_GO_AGENT_PATH"),
-			whatapDotnetAgentPath: getEnv(containerSpec.Env, "WHATAP_DOTNET_AGENT_PATH"),
-			ContainerState:        getContainerState(pod.Status.ContainerStatuses, containerSpec.Name)}
+			ContainerName:            containerSpec.Name,
+			ContainerId:              getContainerId(pod.Status.ContainerStatuses, containerSpec.Name),
+			IsApm:                    checkIfApmAgent(containerSpec.Env),
+			whatapJavaAgentPath:      getWhatapJavaAgentPath(containerSpec.Env),
+			whatapPythonAgentPath:    getEnv(containerSpec.Env, "WHATAP_PYTHON_AGENT_PATH"),
+			whatapPhpAgentPath:       getEnv(containerSpec.Env, "WHATAP_PHP_AGENT_PATH"),
+			whatapGoAgentPath:        getEnv(containerSpec.Env, "WHATAP_GO_AGENT_PATH"),
+			whatapDotnetAgentPath:    getEnv(containerSpec.Env, "WHATAP_DOTNET_AGENT_PATH"),
+			whatapExecutableJavaPath: getEnv(containerSpec.Env, "WHATAP_EXECUTABLE_JAVA_PATH"),
+			ContainerState:           getContainerState(pod.Status.ContainerStatuses, containerSpec.Name)}
 
 		if containerInfo.IsApm {
 			podInfo.ContainsApmAgent = true
@@ -189,6 +191,16 @@ func getEnv(envs []corev1.EnvVar, key string) string {
 		}
 	}
 	return ""
+}
+
+func resolveJavaExecPath(podInfo *SimplePodInfo, containerInfo SimpleContainerInfo) string {
+	if containerInfo.whatapExecutableJavaPath != "" {
+		return containerInfo.whatapExecutableJavaPath
+	}
+	if v := podInfo.Labels["WHATAP_EXECUTABLE_JAVA_PATH"]; v != "" {
+		return v
+	}
+	return whatap_config.GetConfig().WhatapExecutableJavaPath
 }
 func getContainerState(ContainerStatuses []corev1.ContainerStatus, containerName string) string {
 	for _, containerStatus := range ContainerStatuses {
@@ -375,7 +387,11 @@ func checkAndExecuteInjection(i int, podInfo *SimplePodInfo, containerInfo Simpl
 	return false
 }
 func execCall(i int, agentPath string, podInfo *SimplePodInfo, containerInfo SimpleContainerInfo) (bool, error) {
-	_, execErr := executeWhatapAgentCommand(podInfo.Namespace, podInfo.Name, containerInfo.ContainerName, containerInfo.ContainerId, agentPath)
+	javaExecPath := ""
+	if strings.HasSuffix(strings.ToLower(agentPath), ".jar") {
+		javaExecPath = resolveJavaExecPath(podInfo, containerInfo)
+	}
+	_, execErr := executeWhatapAgentCommand(podInfo.Namespace, podInfo.Name, containerInfo.ContainerName, containerInfo.ContainerId, agentPath, javaExecPath)
 	processedContainers.Store(containerInfo.ContainerId, true) // 처리된 컨테이너 ID를 저장
 	podInfo.ContainerInfos[i].ExecProcessed = true
 	podName := podInfo.Name
@@ -430,10 +446,14 @@ func getWhatapJavaAgentPathFromCmdLine(pid int) (string, error) {
 	return "", nil
 }
 
-func executeWhatapAgentCommand(podNamespace, podName, containerName, containerID, agentPath string) (bool, error) {
+func executeWhatapAgentCommand(podNamespace, podName, containerName, containerID, agentPath string, javaExecPath string) (bool, error) {
 	var cmds []string
 	if strings.HasSuffix(strings.ToLower(agentPath), ".jar") {
-		cmds = []string{"java", "-cp", agentPath, "whatap.agent.ContainerConf", containerID}
+		exec := javaExecPath
+		if exec == "" {
+			exec = "java"
+		}
+		cmds = []string{exec, "-cp", agentPath, "whatap.agent.ContainerConf", containerID}
 	} else {
 		cmds = []string{agentPath, "-c", containerID}
 	}

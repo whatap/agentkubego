@@ -2,14 +2,15 @@ package micro
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+
 	"github.com/whatap/kube/cadvisor/pkg/containerd"
 	"github.com/whatap/kube/cadvisor/pkg/crio"
 	"github.com/whatap/kube/cadvisor/pkg/docker"
 	"github.com/whatap/kube/cadvisor/tools/util/runtimeutil"
 	"github.com/whatap/kube/tools/util/logutil"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 var (

@@ -40,6 +40,7 @@ type Config struct {
 	WhatapPhpAgentPath                     string
 	WhatapGoAgentPath                      string
 	WhatapDotnetAgentPath                  string
+	WhatapExecutableJavaPath               string
 	InspectWhatapAgentPathFromProc         bool
 	CollectVolumeDetailEnabled             bool
 	InjectContainerIdToApmAgentEnabled     bool
@@ -152,6 +153,7 @@ func init() {
 	fmt.Printf("-DefaultPhpAgentPath: %v\n", whatapConfig.WhatapPhpAgentPath)
 	fmt.Printf("-DefaultGoAgentPath: %v\n", whatapConfig.WhatapGoAgentPath)
 	fmt.Printf("-DefaultDotnetAgentPath: %v\n", whatapConfig.WhatapDotnetAgentPath)
+	fmt.Printf("-ExecutableJavaPath: %v\n", whatapConfig.WhatapExecutableJavaPath)
 	fmt.Printf("-IsRuntimeDocker: %v\n", whatapConfig.IsRuntimeDocker)
 	fmt.Printf("-IsRuntimeContainerd: %v\n", whatapConfig.IsRuntimeContainerd)
 	fmt.Printf("-IsRuntimeCrio: %v\n", whatapConfig.IsRuntimeCrio)
@@ -322,6 +324,7 @@ func apply() {
 		conf.WhatapPhpAgentPath = getValueDef("whatap_php_agent_path", "")
 		conf.WhatapGoAgentPath = getValueDef("whatap_go_agent_path", "")
 		conf.WhatapDotnetAgentPath = getValueDef("whatap_dotnet_agent_path", "")
+		conf.WhatapExecutableJavaPath = getValueDef("whatap_executable_java_path", "")
 		conf.InspectWhatapAgentPathFromProc = getBoolean("inspect_whatap_agent_path_from_proc", true)
 		conf.UseCachedMountPointEnabled = getBoolean("use_cached_mount_info_enabled", true)
 		conf.CollectProcessPssEnabled = getBoolean("collect_process_pss_enabled", true)
@@ -614,6 +617,7 @@ func ToString() string {
 	sb.Append("WhatapPhpAgentPath").Append("=").AppendLine(fmt.Sprintf("%v", conf.WhatapPhpAgentPath))
 	sb.Append("WhatapGoAgentPath").Append("=").AppendLine(fmt.Sprintf("%v", conf.WhatapGoAgentPath))
 	sb.Append("WhatapDotnetAgentPath").Append("=").AppendLine(fmt.Sprintf("%v", conf.WhatapDotnetAgentPath))
+	sb.Append("WhatapExecutableJavaPath").Append("=").AppendLine(fmt.Sprintf("%v", conf.WhatapExecutableJavaPath))
 	sb.Append("InspectWhatapAgentPathFromProc").Append("=").AppendLine(fmt.Sprintf("%v", conf.InspectWhatapAgentPathFromProc))
 	sb.Append("UseCachedMountPointEnabled").Append("=").AppendLine(fmt.Sprintf("%v", conf.UseCachedMountPointEnabled))
 	return sb.ToString()
