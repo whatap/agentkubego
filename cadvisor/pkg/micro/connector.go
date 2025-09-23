@@ -37,6 +37,9 @@ func IsValidAgentPath(path string) bool {
 	if strings.Contains(path, "whatap.agent.kube.jar") {
 		return true
 	}
+	if strings.Contains(path, "whatap.agent.jar") {
+		return true
+	}
 	// Accept legacy/alternate java agent jar name
 	if strings.Contains(path, "whatap.agent.java.jar") {
 		return true
