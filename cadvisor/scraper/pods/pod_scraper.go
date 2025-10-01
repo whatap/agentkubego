@@ -32,6 +32,7 @@ type SimpleContainerInfo struct {
 	ExecProcessed            bool
 	whatapJavaAgentPath      string
 	whatapPythonAgentPath    string
+	whatapNodeJsAgentPath    string
 	whatapPhpAgentPath       string
 	whatapGoAgentPath        string
 	whatapDotnetAgentPath    string
@@ -136,6 +137,7 @@ func createSimplePodInfo(pod *corev1.Pod) SimplePodInfo {
 			IsApm:                    checkIfApmAgent(containerSpec.Env),
 			whatapJavaAgentPath:      getWhatapJavaAgentPath(containerSpec.Env),
 			whatapPythonAgentPath:    getEnv(containerSpec.Env, "WHATAP_PYTHON_AGENT_PATH"),
+			whatapNodeJsAgentPath:    getEnv(containerSpec.Env, "WHATAP_NODEJS_AGENT_PATH"),
 			whatapPhpAgentPath:       getEnv(containerSpec.Env, "WHATAP_PHP_AGENT_PATH"),
 			whatapGoAgentPath:        getEnv(containerSpec.Env, "WHATAP_GO_AGENT_PATH"),
 			whatapDotnetAgentPath:    getEnv(containerSpec.Env, "WHATAP_DOTNET_AGENT_PATH"),
@@ -260,7 +262,7 @@ func executeInjection(podInfo *SimplePodInfo) {
 		}
 
 		// 실행할 명령이 있는 경우
-		// 1. env 우선: Java, Python, PHP, Go, Dotnet 순
+		// 1. env 우선: Java, Python, NodeJs, PHP, Go, Dotnet 순
 		if checkAndExecuteInjection(i, podInfo, containerInfo, containerInfo.whatapJavaAgentPath, "ApmEnv-Java") {
 			podsMap[podInfo.Uid] = *podInfo
 			continue
@@ -269,6 +271,12 @@ func executeInjection(podInfo *SimplePodInfo) {
 			podsMap[podInfo.Uid] = *podInfo
 			continue
 		}
+
+		if checkAndExecuteInjection(i, podInfo, containerInfo, containerInfo.whatapNodeJsAgentPath, "ApmEnv-NodeJs") {
+			podsMap[podInfo.Uid] = *podInfo
+			continue
+		}
+
 		if checkAndExecuteInjection(i, podInfo, containerInfo, containerInfo.whatapPhpAgentPath, "ApmEnv-PHP") {
 			podsMap[podInfo.Uid] = *podInfo
 			continue
@@ -290,6 +298,11 @@ func executeInjection(podInfo *SimplePodInfo) {
 		}
 		whatapPythonAgentPathFromLabel := podInfo.Labels["WHATAP_PYTHON_AGENT_PATH"]
 		if checkAndExecuteInjection(i, podInfo, containerInfo, whatapPythonAgentPathFromLabel, "Label-Python") {
+			podsMap[podInfo.Uid] = *podInfo
+			continue
+		}
+		whatapNodeJsAgentPathFromLabel := podInfo.Labels["WHATAP_NODEJS_AGENT_PATH"]
+		if checkAndExecuteInjection(i, podInfo, containerInfo, whatapNodeJsAgentPathFromLabel, "Label-NodeJs") {
 			podsMap[podInfo.Uid] = *podInfo
 			continue
 		}
@@ -316,6 +329,10 @@ func executeInjection(podInfo *SimplePodInfo) {
 			continue
 		}
 		if checkAndExecuteInjection(i, podInfo, containerInfo, whatap_config.GetConfig().WhatapPythonAgentPath, "NodeHelperEnv-Python") {
+			podsMap[podInfo.Uid] = *podInfo
+			continue
+		}
+		if checkAndExecuteInjection(i, podInfo, containerInfo, whatap_config.GetConfig().WhatapNodeJsAgentPath, "NodeHelperEnv-NodeJs") {
 			podsMap[podInfo.Uid] = *podInfo
 			continue
 		}

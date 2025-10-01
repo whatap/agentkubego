@@ -37,6 +37,7 @@ type Config struct {
 	ConfBaseAgentPort                      int32
 	WhatapJavaAgentPath                    string
 	WhatapPythonAgentPath                  string
+	WhatapNodeJsAgentPath                  string
 	WhatapPhpAgentPath                     string
 	WhatapGoAgentPath                      string
 	WhatapDotnetAgentPath                  string
@@ -321,6 +322,7 @@ func apply() {
 		conf.InjectContainerIdToApmAgentEnabled = getBoolean("inject_container_id_to_apm_agent_enabled", true)
 		conf.WhatapJavaAgentPath = getValueDef("whatap_java_agent_path", "")
 		conf.WhatapPythonAgentPath = getValueDef("whatap_python_agent_path", "")
+		conf.WhatapNodeJsAgentPath = getValueDef("whatap_nodejs_agent_path", "")
 		conf.WhatapPhpAgentPath = getValueDef("whatap_php_agent_path", "")
 		conf.WhatapGoAgentPath = getValueDef("whatap_go_agent_path", "")
 		conf.WhatapDotnetAgentPath = getValueDef("whatap_dotnet_agent_path", "")
