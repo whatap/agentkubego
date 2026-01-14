@@ -1,4 +1,4 @@
-FROM golang:1.22.7-alpine3.20 AS whatap_debugger_build
+FROM public.ecr.aws/docker/library/golang:1.22.7-alpine3.20 AS whatap_debugger_build
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -11,7 +11,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" GOOS=$TARGETOS GOARCH=$TAR
 
 RUN ls /data/agent/tools
 
-FROM --platform=${TARGETPLATFORM} alpine AS packaging
+FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine AS packaging
 
 ARG BUILDPLATFORM
 ARG BUILDARCH

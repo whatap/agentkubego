@@ -2,7 +2,7 @@
 #FROM whatap/kube_mon_dev:1.7.15-sec AS whatap_kube_mon
 
 # ===Build cadvisor_helper Binary ===
-FROM --platform=$BUILDPLATFORM golang:1.22.7 AS whatap_cadvisor_helper_build
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/golang:1.22.7 AS whatap_cadvisor_helper_build
 
 # Build arguments for cross-platform compilation
 ARG TARGETOS
@@ -37,7 +37,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
 RUN ls /data/agent/node
 
 # ===Build debugger Binary ===
-FROM --platform=$BUILDPLATFORM golang:1.22.7 AS whatap_debugger_build
+FROM --platform=$BUILDPLATFORM public.ecr.aws/docker/library/golang:1.22.7 AS whatap_debugger_build
 ARG TARGETOS
 ARG TARGETARCH
 RUN echo "Kubernetes Node Debugger Build is running"
@@ -66,7 +66,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
 RUN ls /data/agent/tools
 
 # === Build whatap_control_plane_helper Binary ===
-FROM --platform=${BUILDPLATFORM} golang:1.22.7-alpine3.20 AS whatap_control_plane_helper_build
+FROM --platform=${BUILDPLATFORM} public.ecr.aws/docker/library/golang:1.22.7-alpine3.20 AS whatap_control_plane_helper_build
 
 # Build arguments for cross-platform compilation
 ARG TARGETPLATFORM
@@ -85,7 +85,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=0 GOOS=$TARGET
 RUN ls /data/agent/master
 
 # === Final Packaging ===
-FROM --platform=${TARGETPLATFORM} alpine AS packaging
+FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine AS packaging
 
 ARG BUILDPLATFORM
 ARG BUILDARCH

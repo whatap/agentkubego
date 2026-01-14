@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM} golang:1.22.7-alpine3.20 AS whatap_control_plane_helper_build
+FROM --platform=${BUILDPLATFORM} public.ecr.aws/docker/library/golang:1.22.7-alpine3.20 AS whatap_control_plane_helper_build
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extld
 
 RUN ls /data/agent/master
 
-FROM --platform=${TARGETPLATFORM} alpine AS packaging
+FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine AS packaging
 
 ARG BUILDPLATFORM
 ARG BUILDARCH

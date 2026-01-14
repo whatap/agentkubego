@@ -1,4 +1,4 @@
-FROM golang:1.22.7-alpine3.20 AS whatap_cadvisor_helper_build
+FROM public.ecr.aws/docker/library/golang:1.22.7-alpine3.20 AS whatap_cadvisor_helper_build
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -14,7 +14,7 @@ RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extld
 
 RUN ls /data/agent/node
 
-FROM --platform=${TARGETPLATFORM} alpine AS packaging
+FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine AS packaging
 
 ARG BUILDPLATFORM
 ARG BUILDARCH
