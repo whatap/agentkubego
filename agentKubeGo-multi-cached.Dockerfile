@@ -66,7 +66,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
 RUN ls /data/agent/tools
 
 # === Build whatap_control_plane_helper Binary ===
-FROM --platform=${BUILDPLATFORM} public.ecr.aws/docker/library/golang:1.22.7-alpine3.21 AS whatap_control_plane_helper_build
+FROM --platform=${BUILDPLATFORM} public.ecr.aws/docker/library/golang:1.22-alpine3.21 AS whatap_control_plane_helper_build
 
 # Build arguments for cross-platform compilation
 ARG TARGETPLATFORM
