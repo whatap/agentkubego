@@ -66,7 +66,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
 RUN ls /data/agent/tools
 
 # === Build whatap_control_plane_helper Binary ===
-FROM --platform=${BUILDPLATFORM} public.ecr.aws/docker/library/golang:1.22.7-alpine3.20 AS whatap_control_plane_helper_build
+FROM --platform=${BUILDPLATFORM} public.ecr.aws/docker/library/golang:1.22.7-alpine3.21 AS whatap_control_plane_helper_build
 
 # Build arguments for cross-platform compilation
 ARG TARGETPLATFORM
@@ -85,7 +85,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=0 GOOS=$TARGET
 RUN ls /data/agent/master
 
 # === Final Packaging ===
-FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine AS packaging
+FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine:3.21 AS packaging
 
 ARG BUILDPLATFORM
 ARG BUILDARCH
@@ -102,6 +102,7 @@ COPY --from=whatap_cadvisor_helper_build /data/agent/node/cadvisor_helper ./node
 COPY --from=whatap_control_plane_helper_build /data/agent/master/whatap_control_plane_helper ./master
 COPY --from=whatap_debugger_build /data/agent/tools/whatap_debugger ./tools
 #COPY --from=whatap_kube_mon /data/agent/sidecar/whatap_sidecar ./sidecar
+RUN apk update && apk upgrade --no-cache
 RUN apk add --no-cache bash
 RUN apk add --no-cache curl
 RUN apk add --no-cache jq

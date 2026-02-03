@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/golang:1.22.7-alpine3.20 AS whatap_cadvisor_helper_build
+FROM public.ecr.aws/docker/library/golang:1.22.7-alpine3.21 AS whatap_cadvisor_helper_build
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -14,7 +14,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 GOOS=$TARGET
 
 RUN ls /data/agent/node
 
-FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine:3.20 AS packaging
+FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine:3.21 AS packaging
 
 ARG BUILDPLATFORM
 ARG BUILDARCH
@@ -25,6 +25,7 @@ ARG TARGETARCH
 WORKDIR /data/agent
 RUN mkdir /data/agent/node
 COPY --from=whatap_cadvisor_helper_build /data/agent/node/cadvisor_helper ./node
+RUN apk update && apk upgrade --no-cache
 RUN apk add --no-cache bash
 RUN apk add --no-cache curl
 RUN apk add --no-cache jq

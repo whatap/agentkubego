@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM} public.ecr.aws/docker/library/golang:1.22.7-alpine3.20 AS whatap_control_plane_helper_build
+FROM --platform=${BUILDPLATFORM} public.ecr.aws/docker/library/golang:1.22.7-alpine3.21 AS whatap_control_plane_helper_build
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extld
 
 RUN ls /data/agent/master
 
-FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine AS packaging
+FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine:3.21 AS packaging
 
 ARG BUILDPLATFORM
 ARG BUILDARCH
@@ -25,6 +25,7 @@ ARG TARGETARCH
 WORKDIR /data/agent
 RUN mkdir /data/agent/master
 COPY --from=whatap_control_plane_helper_build /data/agent/master/whatap_control_plane_helper ./master
+RUN apk update && apk upgrade --no-cache
 RUN apk add --no-cache bash
 RUN apk add curl
 CMD []
