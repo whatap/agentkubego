@@ -4,7 +4,7 @@ import "os"
 
 func CheckDockerEnabled() bool {
 	fi, err := os.Stat("/var/run/docker.sock")
-	if err != nil && os.IsNotExist(err) {
+	if err != nil {
 		return false
 	}
 
@@ -17,7 +17,7 @@ func CheckDockerEnabled() bool {
 
 func CheckCrioEnabled() bool {
 	fi, err := os.Stat("/var/run/crio/crio.sock")
-	if err != nil && os.IsNotExist(err) {
+	if err != nil {
 		return false
 	}
 
@@ -30,7 +30,7 @@ func CheckCrioEnabled() bool {
 
 func CheckContainerdEnabled() bool {
 	fi, err := os.Stat("/run/containerd/containerd.sock")
-	if err != nil && os.IsNotExist(err) {
+	if err != nil {
 		return false
 	}
 

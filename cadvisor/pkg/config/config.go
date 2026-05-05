@@ -63,7 +63,7 @@ type Config struct {
 
 func checkDockerEnabled() bool {
 	fi, err := os.Stat("/var/run/docker.sock")
-	if err != nil && os.IsNotExist(err) {
+	if err != nil {
 		return false
 	}
 
@@ -76,7 +76,7 @@ func checkDockerEnabled() bool {
 
 func checkContainerdEnabled() bool {
 	fi, err := os.Stat("/run/containerd/containerd.sock")
-	if err != nil && os.IsNotExist(err) {
+	if err != nil {
 		return false
 	}
 
@@ -89,7 +89,7 @@ func checkContainerdEnabled() bool {
 
 func checkCrioEnabled() bool {
 	fi, err := os.Stat("/var/run/crio/crio.sock")
-	if err != nil && os.IsNotExist(err) {
+	if err != nil {
 		return false
 	}
 

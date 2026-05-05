@@ -6,6 +6,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math"
+	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
+	"runtime/pprof"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
+
 	"github.com/gorilla/mux"
 	whatap_cgroup "github.com/whatap/kube/cadvisor/pkg/cgroup"
 	"github.com/whatap/kube/cadvisor/pkg/client"
@@ -18,20 +30,9 @@ import (
 	whatap_osinfo "github.com/whatap/kube/cadvisor/tools/osinfo"
 	"github.com/whatap/kube/cadvisor/tools/util/runtimeutil"
 	"github.com/whatap/kube/tools/util/logutil"
-	"io"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"math"
-	"net/http"
-	"os"
-	"path/filepath"
-	"regexp"
-	"runtime/pprof"
-	"strconv"
-	"strings"
-	"syscall"
-	"time"
 )
 
 var (
@@ -86,6 +87,10 @@ func GetContainerInspectHandler(w http.ResponseWriter, req *http.Request) {
 		content, err = whatap_containerd.GetContainerInspect(containerId)
 	} else if containerRuntime == "crio" {
 		content, err = whatap_crio.GetContainerInspect(HOSTPATH_PREFIX, containerId)
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("unsupported container runtime"))
+		return
 	}
 
 	if err != nil {
