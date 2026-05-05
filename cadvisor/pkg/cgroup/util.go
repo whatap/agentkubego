@@ -5,6 +5,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/url"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/whatap/kube/cadvisor/pkg/client"
 	whatap_config "github.com/whatap/kube/cadvisor/pkg/config"
 	"github.com/whatap/kube/tools/util/fileutil"
@@ -14,13 +22,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8srest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
-	"net/url"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strings"
-	"sync"
-	"time"
 )
 
 var (
@@ -314,7 +315,7 @@ func GetContainerRestartCount(containerId string) (int, string, error) {
 	if ok {
 		return restartCnt, containerNameLookup[containerId], nil
 	} else {
-		return 0, "", fmt.Errorf("container ", containerId, " not found")
+		return 0, "", fmt.Errorf("container %s not found", containerId)
 	}
 }
 func getRealCgroupParent(cgroupParent string, containerId string) (ret string) {

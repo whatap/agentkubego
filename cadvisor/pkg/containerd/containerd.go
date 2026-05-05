@@ -5,6 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/containerd/containerd"
 	whatap_cgroup "github.com/whatap/kube/cadvisor/pkg/cgroup"
 	"github.com/whatap/kube/cadvisor/pkg/client"
@@ -15,13 +23,6 @@ import (
 	"github.com/whatap/kube/tools/util/fileutil"
 	"github.com/whatap/kube/tools/util/stringutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 var (
@@ -400,7 +401,7 @@ func getContainerRestartCount(containerId string) (int, string, error) {
 	if ok {
 		return restartCnt, containerNameLookup[containerId], nil
 	} else {
-		return 0, "", fmt.Errorf("container ", containerId, " not found")
+		return 0, "", fmt.Errorf("container %s not found", containerId)
 	}
 }
 
