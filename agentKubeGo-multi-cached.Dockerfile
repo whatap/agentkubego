@@ -85,7 +85,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=0 GOOS=$TARGET
 RUN ls /data/agent/master
 
 # === Final Packaging ===
-FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine:3.21 AS packaging
+FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine:3.22 AS packaging
 
 ARG BUILDPLATFORM
 ARG BUILDARCH
@@ -105,5 +105,5 @@ COPY --from=whatap_debugger_build /data/agent/tools/whatap_debugger ./tools
 RUN apk update && apk upgrade --no-cache
 RUN apk add --no-cache bash
 RUN apk add --no-cache curl
-RUN apk add --no-cache jq
+RUN apk add --no-cache "jq>=1.8.0"
 CMD []

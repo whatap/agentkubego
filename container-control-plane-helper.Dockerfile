@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-w -extld
 
 RUN ls /data/agent/master
 
-FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine:3.21 AS packaging
+FROM --platform=${TARGETPLATFORM} public.ecr.aws/docker/library/alpine:3.22 AS packaging
 
 ARG BUILDPLATFORM
 ARG BUILDARCH
