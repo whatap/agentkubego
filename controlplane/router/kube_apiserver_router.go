@@ -12,9 +12,11 @@ import (
 func GetApiserverRequestDurationSeconds(w http.ResponseWriter, r *http.Request) {
 	metrics := kube_apiserver.GetCache("apiserver_request_duration_seconds")
 
-	var buckets []ApiserverRequestDurationSecondsBucket
-	var count []ApiserverRequestDurationSecondsCount
-	var sum []ApiserverRequestDurationSecondsSum
+	// 메트릭 부재 시에도 JSON null 이 아닌 빈 배열([])로 직렬화되도록 초기화한다.
+	// nil 슬라이스는 {"buckets":null,...} 로 직렬화되어 마스터 에이전트에서 NPE 를 유발한다. (KAZAA-438)
+	buckets := make([]ApiserverRequestDurationSecondsBucket, 0)
+	count := make([]ApiserverRequestDurationSecondsCount, 0)
+	sum := make([]ApiserverRequestDurationSecondsSum, 0)
 
 	for _, m := range metrics {
 		label := m.GetLabel()
@@ -241,9 +243,10 @@ func GetGoThreads(w http.ResponseWriter, r *http.Request) {
 func GetEtcdRequestDurationSeconds(w http.ResponseWriter, r *http.Request) {
 	metrics := kube_apiserver.GetCache("etcd_request_duration_seconds")
 
-	var buckets []EtcdRequestDurationSecondsBucket
-	var count []EtcdRequestDurationSecondsCount
-	var sum []EtcdRequestDurationSecondsSum
+	// 메트릭 부재 시에도 JSON null 이 아닌 빈 배열([])로 직렬화되도록 초기화한다. (KAZAA-438)
+	buckets := make([]EtcdRequestDurationSecondsBucket, 0)
+	count := make([]EtcdRequestDurationSecondsCount, 0)
+	sum := make([]EtcdRequestDurationSecondsSum, 0)
 
 	for _, m := range metrics {
 		label := m.GetLabel()
