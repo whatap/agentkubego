@@ -8,7 +8,8 @@ import (
 
 func GetEtcdServerHasLeader(w http.ResponseWriter, r *http.Request) {
 	metrics := etcd.GetCache("etcd_server_has_leader")
-	var dataArr []EtcdServerHasLeader
+	// 메트릭 부재 시 nil 슬라이스가 JSON null 로 직렬화되는 것을 막고 빈 배열([])을 반환한다. (KAZAA-438)
+	dataArr := make([]EtcdServerHasLeader, 0)
 	for _, m := range metrics {
 		label := m.GetLabel()
 		data := EtcdServerHasLeader{}
@@ -28,7 +29,7 @@ func GetEtcdServerHasLeader(w http.ResponseWriter, r *http.Request) {
 
 func GetEtcdServerProposalsCommittedTotal(w http.ResponseWriter, r *http.Request) {
 	metrics := etcd.GetCache("etcd_server_proposals_committed_total")
-	var dataArr []EtcdServerProposalsCommittedTotal
+	dataArr := make([]EtcdServerProposalsCommittedTotal, 0) // KAZAA-438: nil 대신 []
 	for _, m := range metrics {
 		label := m.GetLabel()
 		data := EtcdServerProposalsCommittedTotal{}
@@ -48,7 +49,7 @@ func GetEtcdServerProposalsCommittedTotal(w http.ResponseWriter, r *http.Request
 
 func GetEtcdServerProposalsAppliedTotal(w http.ResponseWriter, r *http.Request) {
 	metrics := etcd.GetCache("etcd_server_proposals_applied_total")
-	var dataArr []EtcdServerProposalsAppliedTotal
+	dataArr := make([]EtcdServerProposalsAppliedTotal, 0) // KAZAA-438: nil 대신 []
 	for _, m := range metrics {
 		label := m.GetLabel()
 		data := EtcdServerProposalsAppliedTotal{}
@@ -68,7 +69,7 @@ func GetEtcdServerProposalsAppliedTotal(w http.ResponseWriter, r *http.Request) 
 
 func GetEtcdServerLeaderChangesSeenTotal(w http.ResponseWriter, r *http.Request) {
 	metrics := etcd.GetCache("etcd_server_leader_changes_seen_total")
-	var dataArr []EtcdServerLeaderChangesSeenTotal
+	dataArr := make([]EtcdServerLeaderChangesSeenTotal, 0) // KAZAA-438: nil 대신 []
 	for _, m := range metrics {
 		label := m.GetLabel()
 		data := EtcdServerLeaderChangesSeenTotal{}
