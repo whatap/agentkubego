@@ -34,6 +34,42 @@ func TestGetApiserverRequestDurationSeconds_EmptyCache_NoNull(t *testing.T) {
 	}
 }
 
+// KAZAA-438 전수 점검 회귀 테스트
+// 최상위 배열 응답 핸들러(apiserver/etcd/scheduler)도 캐시가 비어 있을 때
+// JSON null 이 아닌 빈 배열([])을 반환해야 한다. (마스터는 최상위 배열을 == null
+// 로 가드하므로 NPE 는 없지만, helper 응답을 [] 로 일관화하여 방어 깊이를 더한다.)
+func TestControlPlaneArrayHandlers_EmptyCache_ReturnEmptyArray(t *testing.T) {
+	handlers := map[string]http.HandlerFunc{
+		"/apiserver-request-total":               GetApiserverRequestTotal,
+		"/apiserver-current-inflight-requests":   GetApiserverCurrentInflightRequest,
+		"/apiserver-audit-level-total":           GetApiserverAuditLevelTotal,
+		"/go-goroutines":                         GetGoGoroutines,
+		"/go-threads":                            GetGoThreads,
+		"/etcd-server-has-leader":                GetEtcdServerHasLeader,
+		"/etcd-server-proposals-committed-total": GetEtcdServerProposalsCommittedTotal,
+		"/etcd-server-proposals-applied-total":   GetEtcdServerProposalsAppliedTotal,
+		"/etcd-server-leader-changes-seen-total": GetEtcdServerLeaderChangesSeenTotal,
+		"/kube-scheduler":                        GetMetrics,
+	}
+
+	for path, h := range handlers {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+
+		h(rec, req)
+
+		body := strings.TrimSpace(rec.Body.String())
+		if body != "[]" {
+			t.Errorf("%s: 빈 캐시 응답이 [] 가 아님(마스터 가드 의존 회피): %q", path, body)
+		}
+
+		var arr []interface{}
+		if err := json.Unmarshal([]byte(body), &arr); err != nil {
+			t.Errorf("%s: JSON 배열 파싱 실패: %v, body=%s", path, err, body)
+		}
+	}
+}
+
 func TestGetEtcdRequestDurationSeconds_EmptyCache_NoNull(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/etcd-request-duration-seconds", nil)
 	rec := httptest.NewRecorder()

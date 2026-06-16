@@ -11,7 +11,8 @@ func GetMetrics(w http.ResponseWriter, r *http.Request) {
 	GetSchedulerPendingPods(results)
 	GetSchedulerPreemptionAttemptsTotal(results)
 	GetSchedulerPreemptionVictims(results)
-	var values []KubeSchedulerByInstance
+	// 스케줄러 메트릭 부재 시 nil 슬라이스가 JSON null 로 직렬화되는 것을 막고 빈 배열([])을 반환한다. (KAZAA-438)
+	values := make([]KubeSchedulerByInstance, 0)
 	for _, result := range results {
 		values = append(values, result)
 	}

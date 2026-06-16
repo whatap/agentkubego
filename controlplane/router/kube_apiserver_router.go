@@ -104,7 +104,8 @@ func GetApiserverRequestDurationSeconds(w http.ResponseWriter, r *http.Request) 
 
 func GetApiserverRequestTotal(w http.ResponseWriter, r *http.Request) {
 	metrics := kube_apiserver.GetCache("apiserver_request_total")
-	var dataArr []ApiServerRequestTotal
+	// 메트릭 부재 시 nil 슬라이스가 JSON null 로 직렬화되는 것을 막고 빈 배열([])을 반환한다. (KAZAA-438)
+	dataArr := make([]ApiServerRequestTotal, 0)
 	for _, m := range metrics {
 		label := m.GetLabel()
 		data := ApiServerRequestTotal{}
@@ -145,7 +146,7 @@ func GetApiserverRequestTotal(w http.ResponseWriter, r *http.Request) {
 
 func GetApiserverCurrentInflightRequest(w http.ResponseWriter, r *http.Request) {
 	metrics := kube_apiserver.GetCache("apiserver_current_inflight_requests")
-	var dataArr []ApiserverCurrentInflightRequests
+	dataArr := make([]ApiserverCurrentInflightRequests, 0) // KAZAA-438: nil 대신 []
 	for _, m := range metrics {
 		label := m.GetLabel()
 		data := ApiserverCurrentInflightRequests{}
@@ -170,7 +171,7 @@ func GetApiserverCurrentInflightRequest(w http.ResponseWriter, r *http.Request) 
 
 func GetApiserverAuditLevelTotal(w http.ResponseWriter, r *http.Request) {
 	metrics := kube_apiserver.GetCache("apiserver_audit_level_total")
-	var dataArr []ApiserverAuditLevelTotal
+	dataArr := make([]ApiserverAuditLevelTotal, 0) // KAZAA-438: nil 대신 []
 	for _, m := range metrics {
 		label := m.GetLabel()
 		data := ApiserverAuditLevelTotal{}
@@ -196,7 +197,7 @@ func GetApiserverAuditLevelTotal(w http.ResponseWriter, r *http.Request) {
 
 func GetGoGoroutines(w http.ResponseWriter, r *http.Request) {
 	metrics := kube_apiserver.GetCache("go_goroutines")
-	var dataArr []GoGoroutines
+	dataArr := make([]GoGoroutines, 0) // KAZAA-438: nil 대신 []
 	for _, m := range metrics {
 		label := m.GetLabel()
 		data := GoGoroutines{}
@@ -219,7 +220,7 @@ func GetGoGoroutines(w http.ResponseWriter, r *http.Request) {
 
 func GetGoThreads(w http.ResponseWriter, r *http.Request) {
 	metrics := kube_apiserver.GetCache("go_threads")
-	var dataArr []GoThreads
+	dataArr := make([]GoThreads, 0) // KAZAA-438: nil 대신 []
 	for _, m := range metrics {
 		label := m.GetLabel()
 		data := GoThreads{}
