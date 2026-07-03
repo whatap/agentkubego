@@ -328,7 +328,9 @@ func apply() {
 		conf.WhatapDotnetAgentPath = getValueDef("whatap_dotnet_agent_path", "")
 		conf.WhatapExecutableJavaPath = getValueDef("whatap_executable_java_path", "")
 		conf.InspectWhatapAgentPathFromProc = getBoolean("inspect_whatap_agent_path_from_proc", true)
-		conf.UseCachedMountPointEnabled = getBoolean("use_cached_mount_info_enabled", true)
+		// 기본 false: true면 node-helper 첫 스캔 시점의 mountinfo가 영구 캐시되어
+		// 이후 마운트되는 파드 PVC 볼륨이 /host/disks 응답에서 영구 누락된다 (KAZAA-902)
+		conf.UseCachedMountPointEnabled = getBoolean("use_cached_mount_info_enabled", false)
 		conf.CollectProcessPssEnabled = getBoolean("collect_process_pss_enabled", true)
 		conf.CollectProcessPssTargetList = strings.Split(getValueDef("collect_process_pss_target_list", "httpd,apache,apache2,kubelet,containerd-shim,containerd,docker,dockerd,crio"), ",")
 		conf.CollectKubeNodeProcessMetricEnabled = getBoolean("collect_kube_node_process_metric_enabled", true)
