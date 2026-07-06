@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/whatap/kube/cadvisor/pkg/client"
 	whatap_config "github.com/whatap/kube/cadvisor/pkg/config"
@@ -80,9 +81,7 @@ func RunPodInformer() {
 			podEventHandler(newObj)
 		},
 		DeleteFunc: func(obj interface{}) {
-			//endpointsMapLock.Lock()
-			//defer endpointsMapLock.Unlock()
-			//endPointsMap = make(map[string]SimplePodInfo) // Reset on delete
+			podDeleteHandler(obj)
 		},
 	})
 	if addEventHandlerErr != nil {
@@ -93,6 +92,109 @@ func RunPodInformer() {
 	}
 	go podsInformer.Run(ch)
 	cache.WaitForCacheSync(ch, podsInformer.HasSynced)
+	go runPodCacheSweeper(podsInformer)
+}
+
+func podDeleteHandler(obj interface{}) {
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		// informer가 삭제 이벤트를 놓친 뒤 재동기화하면 tombstone으로 전달된다
+		tombstone, isTombstone := obj.(cache.DeletedFinalStateUnknown)
+		if !isTombstone {
+			return
+		}
+		pod, ok = tombstone.Obj.(*corev1.Pod)
+		if !ok {
+			return
+		}
+	}
+	if pod.Spec.NodeName != nodename {
+		return
+	}
+	logutil.Debugf("whatap-node-helper", "podDeleteHandler pod=%v/%v uid=%v", pod.GetNamespace(), pod.GetName(), pod.GetUID())
+	removePodFromCache(string(pod.GetUID()))
+}
+
+// removePodFromCache는 삭제된 파드를 podsMap에서 지우고,
+// 그 파드의 컨테이너 ID를 processedContainers/containerPidLookup에서도 제거한다.
+func removePodFromCache(uid string) {
+	podsMapLock.Lock()
+	podInfo, ok := podsMap[uid]
+	if ok {
+		delete(podsMap, uid)
+	}
+	podsMapLock.Unlock()
+	if !ok {
+		return
+	}
+	for _, containerInfo := range podInfo.ContainerInfos {
+		if containerInfo.ContainerId == "" {
+			continue
+		}
+		processedContainers.Delete(containerInfo.ContainerId)
+		proc.RemoveContainerPid(containerInfo.ContainerId)
+	}
+}
+
+const podCacheSweepInterval = 10 * time.Minute
+
+// runPodCacheSweeper는 삭제 이벤트 유실이나 컨테이너 재시작(ID 교체)으로
+// DeleteFunc가 지우지 못한 항목을 informer store(현존 파드) 기준으로 정리한다.
+func runPodCacheSweeper(informer cache.SharedIndexInformer) {
+	ticker := time.NewTicker(podCacheSweepInterval)
+	defer ticker.Stop()
+	for range ticker.C {
+		sweepPodCaches(informer.GetStore())
+	}
+}
+
+func sweepPodCaches(store cache.Store) {
+	liveUids := make(map[string]struct{})
+	liveContainerIds := make(map[string]struct{})
+	for _, obj := range store.List() {
+		pod, ok := obj.(*corev1.Pod)
+		if !ok || pod.Spec.NodeName != nodename {
+			continue
+		}
+		liveUids[string(pod.GetUID())] = struct{}{}
+		for _, statuses := range [][]corev1.ContainerStatus{
+			pod.Status.ContainerStatuses,
+			pod.Status.InitContainerStatuses,
+			pod.Status.EphemeralContainerStatuses,
+		} {
+			for _, cs := range statuses {
+				parts := strings.SplitN(cs.ContainerID, "://", 2)
+				if len(parts) == 2 && parts[1] != "" {
+					liveContainerIds[parts[1]] = struct{}{}
+				}
+			}
+		}
+	}
+
+	removed := 0
+	podsMapLock.Lock()
+	for uid := range podsMap {
+		if _, live := liveUids[uid]; !live {
+			delete(podsMap, uid)
+			removed++
+		}
+	}
+	podsMapLock.Unlock()
+
+	processedContainers.Range(func(key, _ interface{}) bool {
+		id, isString := key.(string)
+		if !isString {
+			processedContainers.Delete(key)
+			return true
+		}
+		if _, live := liveContainerIds[id]; !live {
+			processedContainers.Delete(key)
+		}
+		return true
+	})
+	if removed > 0 {
+		logutil.Infof("whatap-node-helper", "sweepPodCaches removed %d stale pod entries, live pods=%d", removed, len(liveUids))
+	}
 }
 
 func podEventHandler(obj interface{}) {
