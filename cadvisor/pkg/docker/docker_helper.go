@@ -6,8 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/docker/docker/api/types"
 	dockertypes "github.com/docker/docker/api/types"
+	dockercontainer "github.com/docker/docker/api/types/container"
 	whatap_cgroup "github.com/whatap/kube/cadvisor/pkg/cgroup"
 	whatap_client "github.com/whatap/kube/cadvisor/pkg/client"
 	whatap_config "github.com/whatap/kube/cadvisor/pkg/config"
@@ -664,7 +664,7 @@ func ExecuteCommand(containerId string, cmds []string, omitFirstLine bool, h1 fu
 	}
 	// defer pc.Release()
 	// cli := pc.Conn
-	options := types.ExecConfig{AttachStdout: true, Detach: false, Tty: false}
+	options := dockercontainer.ExecOptions{AttachStdout: true, Detach: false, Tty: false}
 
 	for _, cmd := range cmds {
 		options.Cmd = append(options.Cmd, cmd)
@@ -674,7 +674,7 @@ func ExecuteCommand(containerId string, cmds []string, omitFirstLine bool, h1 fu
 	if err != nil {
 		return err
 	}
-	execconfig := types.ExecStartCheck{Tty: true}
+	execconfig := dockercontainer.ExecStartOptions{Tty: true}
 	hijackresp, err := cli.ContainerExecAttach(ctx, respid.ID, execconfig)
 	if err == nil {
 		err = cli.ContainerExecStart(ctx, respid.ID, execconfig)
