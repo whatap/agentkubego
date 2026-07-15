@@ -199,7 +199,7 @@ func GetContainerStatsCgroupV1(prefix string, containerId string, name string, c
 			op := words[1]
 			v := stringutil.ToInt64(words[2])
 
-			ioServiceBytesRecursive := whatap_model.BlkDeviceValue{major, minor, op, v}
+			ioServiceBytesRecursive := whatap_model.BlkDeviceValue{Major: major, Minor: minor, Op: op, Value: v}
 			containerStat.BlkioStats.IoServiceBytesRecursive = append(containerStat.BlkioStats.IoServiceBytesRecursive, ioServiceBytesRecursive)
 		}
 	}
@@ -225,7 +225,7 @@ func GetContainerStatsCgroupV1(prefix string, containerId string, name string, c
 			op := words[1]
 			v := stringutil.ToInt64(words[2])
 
-			ioServicedRecursive := whatap_model.BlkDeviceValue{major, minor, op, v}
+			ioServicedRecursive := whatap_model.BlkDeviceValue{Major: major, Minor: minor, Op: op, Value: v}
 			containerStat.BlkioStats.IoServicedRecursive = append(containerStat.BlkioStats.IoServicedRecursive, ioServicedRecursive)
 		}
 	}
