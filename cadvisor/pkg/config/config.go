@@ -28,6 +28,7 @@ type Config struct {
 	CollectNfsDiskEnabled                  bool
 	PathSysBlock                           string
 	Debug                                  bool
+	DebugPprofEnabled                      bool
 	KubeMasterUrl                          string
 	Test                                   bool
 	TestContainerId                        string
@@ -125,6 +126,7 @@ func init() {
 	}
 	// 구성 정보 출력
 	fmt.Printf("-DEBUG: %v\n", whatapConfig.Debug)
+	fmt.Printf("-DebugPprofEnabled: %v\n", whatapConfig.DebugPprofEnabled)
 	fmt.Printf("-Runtime: %v\n", whatapConfig.Runtime)
 	fmt.Printf("-HostPathPrefix: %v\n", whatapConfig.HostPathPrefix)
 	fmt.Printf("-KubeConfigPath: %v\n", whatapConfig.KubeConfigPath)
@@ -310,6 +312,7 @@ func apply() {
 		} else {
 			logutil.SetLevel(logLevelMap["INFO"])
 		}
+		conf.DebugPprofEnabled = getBoolean("debug_pprof_enabled", false)
 		conf.KubeMasterUrl = getValueDef("kube_master_url", "")
 		conf.Test = getBoolean("test", false)
 		conf.TestContainerId = getValueDef("test_container_id", "")
