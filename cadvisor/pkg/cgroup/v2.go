@@ -63,6 +63,11 @@ func GetContainerStatsCgroupV2(prefix string, containerId string, name string, c
 		containerStat.MemoryStats.MaxUsage = v
 	})
 
+	// memory.swap.current — swap 사용량(bytes). swap 미구성/파일 부재는 미수집으로 무시
+	populateCgroupKeyValue(prefix, "", cgroupParent, "memory.swap.current", func(key string, v int64) {
+		containerStat.MemoryStats.SwapUsage = v
+	})
+
 	err = populateCgroupKeyValue(prefix, "", cgroupParent, "memory.events", func(key string, v int64) {
 		if key == "oom" {
 			containerStat.MemoryStats.FailCnt = int(v)
@@ -218,6 +223,12 @@ func GetContainerStatsCgroupV2(prefix string, containerId string, name string, c
 		return containerStat, err
 	}
 
+	// PSI(Pressure Stall Information) — 컨테이너 cgroup과 부모 파드 슬라이스에서 각각 직접 읽는다.
+	// PSI는 가산 불가 지표라 파드 수준을 컨테이너 합산으로 만들 수 없다(KAZAA-3031).
+	// 미가용(파일 부재·PSI 비활성)은 오류가 아닌 nil로 남겨 필드 자체를 생략한다.
+	containerStat.Pressure = readCgroupPressure(prefix, cgroupParent, false)
+	containerStat.PodPressure = readCgroupPressure(prefix, cgroupParent, true)
+
 	err = populateFileValues(prefix, filepath.Join("proc", fmt.Sprint(pid), "net/dev"), func(tokens []string) {
 		// fmt.Println("GetContainerStats step -7.1 ", tokens)
 		if len(tokens) < 13 {
@@ -241,4 +252,60 @@ func GetContainerStatsCgroupV2(prefix string, containerId string, name string, c
 	})
 
 	return containerStat, err
+}
+
+// parsePSILine은 "some avg10=0.00 avg60=0.00 avg300=0.00 total=12345" 형식에서 total(μs)만 수집한다.
+// total을 찾아 반영했으면 true를 반환한다.
+func parsePSILine(words []string, pv *whatap_model.PressureValues) bool {
+	if len(words) < 2 {
+		return false
+	}
+	kind := words[0]
+	if kind != "some" && kind != "full" {
+		return false
+	}
+	for _, word := range words[1:] {
+		key, val := stringutil.Split2(word, "=")
+		if key == "total" {
+			if kind == "some" {
+				pv.SomeTotal = stringutil.ToInt64(val)
+			} else {
+				pv.FullTotal = stringutil.ToInt64(val)
+			}
+			return true
+		}
+	}
+	return false
+}
+
+// readCgroupPressure는 cgroup 디렉토리(pod=true면 부모 파드 슬라이스)의 {cpu,memory,io}.pressure를 읽는다.
+// 파일 부재(커널 4.20 미만·cgroup v1)나 PSI 비활성(RHEL 계열: 읽기 실패로 파싱 0줄)은 nil을 반환해
+// 오류가 아닌 미가용으로 구분한다. cpu.pressure의 full 라인은 커널 5.13+에만 존재 — 없으면 0 유지.
+func readCgroupPressure(prefix string, cgroupsPath string, pod bool) *whatap_model.PressureStats {
+	populate := populateCgroupValues
+	if pod {
+		populate = populatePodCgroupValues
+	}
+	ps := &whatap_model.PressureStats{}
+	targets := []struct {
+		filename string
+		pv       *whatap_model.PressureValues
+	}{
+		{"cpu.pressure", &ps.CPU},
+		{"memory.pressure", &ps.Memory},
+		{"io.pressure", &ps.IO},
+	}
+	found := false
+	for _, target := range targets {
+		pv := target.pv
+		populate(prefix, "", cgroupsPath, target.filename, func(words []string) {
+			if parsePSILine(words, pv) {
+				found = true
+			}
+		})
+	}
+	if !found {
+		return nil
+	}
+	return ps
 }
