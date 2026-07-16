@@ -8,7 +8,7 @@ type IntKeyLinkedEntry struct {
 	key       int32
 	keyHash   uint
 	value     interface{}
-	next *IntKeyLinkedEntry
+	next      *IntKeyLinkedEntry
 	link_next *IntKeyLinkedEntry
 	link_prev *IntKeyLinkedEntry
 }
@@ -18,7 +18,7 @@ func NewIntKeyLinkedEntry(key int32, value interface{}, next *IntKeyLinkedEntry)
 	p.key = key
 	p.value = value
 	p.next = next
-	
+
 	return p
 }
 
@@ -38,7 +38,9 @@ func (this *IntKeyLinkedEntry) Equals(o *IntKeyLinkedEntry) bool {
 }
 
 func (this *IntKeyLinkedEntry) HashCode() uint {
-	return uint(this.key ^ this.key>>32)
+	// key is int32; the Java-derived `key ^ (key >>> 32)` fold is meaningless
+	// for 32-bit keys (and flagged by go vet) — use the key directly.
+	return uint(uint32(this.key))
 }
 
 func (this *IntKeyLinkedEntry) ToString() string {

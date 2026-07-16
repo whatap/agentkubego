@@ -106,7 +106,7 @@ func (this *IntMapValue) PutList(key int32, value ListValue) {
 	this.table.Put(key, value)
 }
 func (this *IntMapValue) Clear() {
-	this.Clear()
+	this.table.Clear()
 }
 func (this *IntMapValue) Size() int {
 	return this.table.Size()

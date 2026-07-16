@@ -43,7 +43,7 @@ func NewIntKeyLinkedMap(initCapacity int, loadFactor float32) *IntKeyLinkedMap {
 		//throw new RuntimeException("Capacity Error: " + initCapacity);
 	}
 	if loadFactor <= 0 {
-		panic(fmt.Sprintf("Load Count Error: %d", loadFactor))
+		panic(fmt.Sprintf("Load Count Error: %f", loadFactor))
 		//throw new RuntimeException("Load Count Error: " + loadFactor);
 	}
 	if initCapacity == 0 {
