@@ -34,7 +34,8 @@ func GetContainerStatsCgroupV2(prefix string, containerId string, name string, c
 		if key == "nr_periods" {
 			containerStat.CPUStats.ThrottlingData.Periods = v
 		} else if key == "throttled_usec" {
-			containerStat.CPUStats.ThrottlingData.ThrottledTime = v
+			// v1 cpu.stat throttled_time은 ns, v2 throttled_usec은 μs — 서버 계약(ns)에 맞춰 정규화
+			containerStat.CPUStats.ThrottlingData.ThrottledTime = v * 1000
 		} else if key == "nr_throttled" {
 			containerStat.CPUStats.ThrottlingData.ThrottledPeriods = v
 		} else if key == "user_usec" {
@@ -56,6 +57,11 @@ func GetContainerStatsCgroupV2(prefix string, containerId string, name string, c
 	if err != nil {
 		return containerStat, err
 	}
+
+	// memory.peak는 kernel 5.19+에만 존재 — 없으면 MaxUsage 0 유지
+	populateCgroupKeyValue(prefix, "", cgroupParent, "memory.peak", func(key string, v int64) {
+		containerStat.MemoryStats.MaxUsage = v
+	})
 
 	err = populateCgroupKeyValue(prefix, "", cgroupParent, "memory.events", func(key string, v int64) {
 		if key == "oom" {
@@ -182,33 +188,30 @@ func GetContainerStatsCgroupV2(prefix string, containerId string, name string, c
 	if err != nil {
 		return containerStat, err
 	}
-	callbackIoServiceBytesRecursive := func(op string, v int64) {
-		major := 1
-		minor := 1
-
-		bdv := whatap_model.BlkDeviceValue{major, minor, op, v}
-		containerStat.BlkioStats.IoServiceBytesRecursive = append(containerStat.BlkioStats.IoServiceBytesRecursive, bdv)
-	}
-
-	callbackIoServicedRecursive := func(op string, v int64) {
-		major := 1
-		minor := 1
-
-		bdv := whatap_model.BlkDeviceValue{major, minor, op, v}
-		containerStat.BlkioStats.IoServicedRecursive = append(containerStat.BlkioStats.IoServicedRecursive, bdv)
-	}
-
-	err = populateCgroupKeyValue(prefix, "", cgroupParent, "io.stat", func(key string, v int64) {
-		switch key {
-		case "rbytes":
-			callbackIoServiceBytesRecursive("Read", v)
-		case "wbytes":
-			callbackIoServiceBytesRecursive("Write", v)
-		case "rios":
-			callbackIoServicedRecursive("Read", v)
-		case "wios":
-			callbackIoServicedRecursive("Write", v)
-		default:
+	// io.stat 포맷: "MAJ:MIN rbytes=N wbytes=N rios=N wios=N ..." — 디바이스별로 분해 수집
+	err = populateCgroupValues(prefix, "", cgroupParent, "io.stat", func(words []string) {
+		if len(words) < 2 {
+			return
+		}
+		strmajor, strminor := stringutil.Split2(words[0], ":")
+		if strmajor == "" && strminor == "" {
+			return
+		}
+		major := int(stringutil.ToInt64(strmajor))
+		minor := int(stringutil.ToInt64(strminor))
+		for _, word := range words[1:] {
+			key, val := stringutil.Split2(word, "=")
+			v := stringutil.ToInt64(val)
+			switch key {
+			case "rbytes":
+				containerStat.BlkioStats.IoServiceBytesRecursive = append(containerStat.BlkioStats.IoServiceBytesRecursive, whatap_model.BlkDeviceValue{Major: major, Minor: minor, Op: "Read", Value: v})
+			case "wbytes":
+				containerStat.BlkioStats.IoServiceBytesRecursive = append(containerStat.BlkioStats.IoServiceBytesRecursive, whatap_model.BlkDeviceValue{Major: major, Minor: minor, Op: "Write", Value: v})
+			case "rios":
+				containerStat.BlkioStats.IoServicedRecursive = append(containerStat.BlkioStats.IoServicedRecursive, whatap_model.BlkDeviceValue{Major: major, Minor: minor, Op: "Read", Value: v})
+			case "wios":
+				containerStat.BlkioStats.IoServicedRecursive = append(containerStat.BlkioStats.IoServicedRecursive, whatap_model.BlkDeviceValue{Major: major, Minor: minor, Op: "Write", Value: v})
+			}
 		}
 	})
 	if err != nil {
