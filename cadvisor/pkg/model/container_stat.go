@@ -9,6 +9,19 @@ type BlkDeviceValue struct {
 	Value int64  `json:"value"`
 }
 
+// PressureValues는 PSI(Pressure Stall Information) 파일 한 개의 total 카운터(μs, 단조 증가)다.
+// avg10/60/300은 서버에서 total 델타로 환산 가능하므로 전송하지 않는다(KAZAA-3031 필드 계약).
+type PressureValues struct {
+	SomeTotal int64 `json:"some_total"`
+	FullTotal int64 `json:"full_total"`
+}
+
+type PressureStats struct {
+	CPU    PressureValues `json:"cpu"`
+	Memory PressureValues `json:"memory"`
+	IO     PressureValues `json:"io"`
+}
+
 type ContainerStat struct {
 	Read      time.Time `json:"read"`
 	Preread   time.Time `json:"preread"`
@@ -95,11 +108,13 @@ type ContainerStat struct {
 			Unevictable             int64 `json:"unevictable"`
 			Writeback               int64 `json:"writeback"`
 		} `json:"stats"`
-		Limit   int64 `json:"limit"`
-		FailCnt int   `json:"failcnt"`
+		Limit int64 `json:"limit"`
+		// SwapUsage는 cgroup v2 memory.swap.current(bytes). v1의 memsw(메모리+swap 합산)와 달리 swap 단독 값이다.
+		SwapUsage int64 `json:"swap_usage"`
+		FailCnt   int   `json:"failcnt"`
 	} `json:"memory_stats"`
-	Name         string `json:"name"`
-	ID           string `json:"id"`
+	Name string `json:"name"`
+	ID   string `json:"id"`
 	NetworkStats struct {
 		RxBytes   int64 `json:"rxBytes"`
 		RxDropped int64 `json:"rxDropped"`
@@ -111,6 +126,10 @@ type ContainerStat struct {
 		TxPackets int64 `json:"txPackets"`
 	} `json:"network_stats"`
 	RestartCount int `json:"restart_count"`
+	// Pressure는 컨테이너 cgroup의 PSI. nil이면 미가용(cgroup v1 모드, 커널 미지원, PSI 비활성).
+	Pressure *PressureStats `json:"pressure_stats,omitempty"`
+	// PodPressure는 부모 파드 슬라이스 cgroup의 PSI. PSI는 가산 불가 지표라 컨테이너 합산 대신 직접 읽는다.
+	PodPressure *PressureStats `json:"pod_pressure_stats,omitempty"`
 }
 type ContainerdSandboxMetadata struct {
 	Version  string `json:"Version"`

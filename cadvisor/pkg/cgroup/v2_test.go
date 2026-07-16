@@ -1,6 +1,7 @@
 package cgroup
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -118,5 +119,124 @@ func TestGetContainerStatsCgroupV2WithoutMemoryPeak(t *testing.T) {
 	}
 	if stat.MemoryStats.Usage != 104857600 {
 		t.Errorf("Usage=%d, want 104857600", stat.MemoryStats.Usage)
+	}
+}
+
+func writePressureFiles(t *testing.T, prefix string, dir string, base int64) {
+	t.Helper()
+	writeTestFile(t, prefix, filepath.Join(dir, "cpu.pressure"),
+		fmt.Sprintf("some avg10=0.12 avg60=0.10 avg300=0.05 total=%d\nfull avg10=0.01 avg60=0.00 avg300=0.00 total=%d\n", base+1, base+2))
+	writeTestFile(t, prefix, filepath.Join(dir, "memory.pressure"),
+		fmt.Sprintf("some avg10=0.00 avg60=0.00 avg300=0.00 total=%d\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=%d\n", base+3, base+4))
+	writeTestFile(t, prefix, filepath.Join(dir, "io.pressure"),
+		fmt.Sprintf("some avg10=0.00 avg60=0.00 avg300=0.00 total=%d\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=%d\n", base+5, base+6))
+}
+
+func TestGetContainerStatsCgroupV2PressureAndSwap(t *testing.T) {
+	prefix := setupCgroupV2Fixture(t, false)
+	containerDir := filepath.Join("sys/fs/cgroup", testCgroupParent)
+	podDir := filepath.Dir(containerDir)
+	writePressureFiles(t, prefix, containerDir, 100)
+	writePressureFiles(t, prefix, podDir, 1000)
+	writeTestFile(t, prefix, filepath.Join(containerDir, "memory.swap.current"), "12345\n")
+
+	stat, err := GetContainerStatsCgroupV2(prefix, "testcontainer", "test", testCgroupParent, 0, 42, 1<<30)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if stat.Pressure == nil {
+		t.Fatal("Pressure=nil, want values")
+	}
+	wantContainer := whatap_model.PressureStats{
+		CPU:    whatap_model.PressureValues{SomeTotal: 101, FullTotal: 102},
+		Memory: whatap_model.PressureValues{SomeTotal: 103, FullTotal: 104},
+		IO:     whatap_model.PressureValues{SomeTotal: 105, FullTotal: 106},
+	}
+	if *stat.Pressure != wantContainer {
+		t.Errorf("Pressure=%+v, want %+v", *stat.Pressure, wantContainer)
+	}
+
+	// 파드 수준은 컨테이너 합산이 아닌 파드 슬라이스 파일의 값 그대로여야 한다
+	if stat.PodPressure == nil {
+		t.Fatal("PodPressure=nil, want values")
+	}
+	wantPod := whatap_model.PressureStats{
+		CPU:    whatap_model.PressureValues{SomeTotal: 1001, FullTotal: 1002},
+		Memory: whatap_model.PressureValues{SomeTotal: 1003, FullTotal: 1004},
+		IO:     whatap_model.PressureValues{SomeTotal: 1005, FullTotal: 1006},
+	}
+	if *stat.PodPressure != wantPod {
+		t.Errorf("PodPressure=%+v, want %+v", *stat.PodPressure, wantPod)
+	}
+
+	if stat.MemoryStats.SwapUsage != 12345 {
+		t.Errorf("SwapUsage=%d, want 12345", stat.MemoryStats.SwapUsage)
+	}
+}
+
+func TestGetContainerStatsCgroupV2PressureAbsent(t *testing.T) {
+	// pressure 파일 부재(커널 4.20 미만 등): 에러 없이 nil로 남겨 미가용으로 구분
+	prefix := setupCgroupV2Fixture(t, false)
+
+	stat, err := GetContainerStatsCgroupV2(prefix, "testcontainer", "test", testCgroupParent, 0, 42, 1<<30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stat.Pressure != nil {
+		t.Errorf("Pressure=%+v, want nil (files absent)", *stat.Pressure)
+	}
+	if stat.PodPressure != nil {
+		t.Errorf("PodPressure=%+v, want nil (files absent)", *stat.PodPressure)
+	}
+	if stat.MemoryStats.SwapUsage != 0 {
+		t.Errorf("SwapUsage=%d, want 0 (file absent)", stat.MemoryStats.SwapUsage)
+	}
+}
+
+func TestGetContainerStatsCgroupV2PressureZeroAndEmpty(t *testing.T) {
+	// 전부-0이어도 파싱 가능한 라인이 있으면 가용(0 값 노출), 내용이 비면(PSI 비활성 읽기 실패 상당) nil
+	prefix := setupCgroupV2Fixture(t, false)
+	containerDir := filepath.Join("sys/fs/cgroup", testCgroupParent)
+	writePressureFiles(t, prefix, containerDir, -1) // total=0부터 시작
+	podDir := filepath.Dir(containerDir)
+	writeTestFile(t, prefix, filepath.Join(podDir, "cpu.pressure"), "")
+	writeTestFile(t, prefix, filepath.Join(podDir, "memory.pressure"), "")
+	writeTestFile(t, prefix, filepath.Join(podDir, "io.pressure"), "")
+
+	stat, err := GetContainerStatsCgroupV2(prefix, "testcontainer", "test", testCgroupParent, 0, 42, 1<<30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stat.Pressure == nil {
+		t.Fatal("Pressure=nil, want zero values (파일이 읽히면 0도 유효)")
+	}
+	if stat.Pressure.CPU.SomeTotal != 0 || stat.Pressure.IO.FullTotal != 5 {
+		t.Errorf("Pressure=%+v, want base -1 values", *stat.Pressure)
+	}
+	if stat.PodPressure != nil {
+		t.Errorf("PodPressure=%+v, want nil (빈 파일 = 파싱 0줄)", *stat.PodPressure)
+	}
+}
+
+func TestReadCgroupPressureSystemdPodSlice(t *testing.T) {
+	// systemd 드라이버 경로: 컨테이너 scope의 부모 = kubepods-*-pod<uid>.slice(파드 슬라이스)
+	prefix := t.TempDir()
+	cgroupsPath := "kubepods-burstable-podabc123.slice:cri-containerd:deadbeef"
+	podDir := "sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-podabc123.slice"
+	writeTestFile(t, prefix, filepath.Join(podDir, "cpu.pressure"),
+		"some avg10=0.00 avg60=0.00 avg300=0.00 total=777\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=88\n")
+
+	ps := readCgroupPressure(prefix, cgroupsPath, true)
+	if ps == nil {
+		t.Fatal("pod pressure=nil, want values")
+	}
+	if ps.CPU.SomeTotal != 777 || ps.CPU.FullTotal != 88 {
+		t.Errorf("pod CPU pressure=%+v, want some=777 full=88", ps.CPU)
+	}
+
+	// 컨테이너 scope 디렉토리에는 pressure가 없으므로 컨테이너 수준은 미가용
+	if got := readCgroupPressure(prefix, cgroupsPath, false); got != nil {
+		t.Errorf("container pressure=%+v, want nil", *got)
 	}
 }
