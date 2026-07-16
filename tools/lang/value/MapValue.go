@@ -184,13 +184,12 @@ func (this *MapValue) PutRaw(name string, v interface{}) {
 	case bool:
 		this.Put(name, NewBoolValue(v.(bool)))
 	default:
-		fmt.Printf("Panic, Not supported type %T. available type: Value, int, int32, int64, float32, float64, string ", name, v)
-		panic(fmt.Sprintf("Panic, Not supported type %T. available type: Value, int, int32, int64, float32, float64, string ", v))
+		panic(fmt.Sprintf("Panic, Not supported type %T on key %s. available type: Value, int, int32, int64, float32, float64, string ", v, name))
 	}
 }
 
 func (this *MapValue) Clear() {
-	this.Clear()
+	this.table.Clear()
 }
 func (this *MapValue) Size() int {
 	return this.table.Size()
