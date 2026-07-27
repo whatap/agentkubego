@@ -65,7 +65,7 @@ func GetContainerStatsCgroupV2(prefix string, containerId string, name string, c
 
 	// memory.swap.current — swap 사용량(bytes). swap 미구성/파일 부재는 미수집으로 무시
 	populateCgroupKeyValue(prefix, "", cgroupParent, "memory.swap.current", func(key string, v int64) {
-		containerStat.MemoryStats.SwapUsage = v
+		containerStat.MemoryStats.SwapUsage = &v
 	})
 
 	err = populateCgroupKeyValue(prefix, "", cgroupParent, "memory.events", func(key string, v int64) {

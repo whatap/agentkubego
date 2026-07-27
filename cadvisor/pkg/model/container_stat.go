@@ -110,11 +110,11 @@ type ContainerStat struct {
 		} `json:"stats"`
 		Limit int64 `json:"limit"`
 		// SwapUsage는 cgroup v2 memory.swap.current(bytes). v1의 memsw(메모리+swap 합산)와 달리 swap 단독 값이다.
-		SwapUsage int64 `json:"swap_usage"`
-		FailCnt   int   `json:"failcnt"`
+		SwapUsage *int64 `json:"swap_usage,omitempty"`
+		FailCnt   int    `json:"failcnt"`
 	} `json:"memory_stats"`
-	Name string `json:"name"`
-	ID   string `json:"id"`
+	Name         string `json:"name"`
+	ID           string `json:"id"`
 	NetworkStats struct {
 		RxBytes   int64 `json:"rxBytes"`
 		RxDropped int64 `json:"rxDropped"`

@@ -1,9 +1,11 @@
 package cgroup
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	whatap_model "github.com/whatap/kube/cadvisor/pkg/model"
@@ -170,8 +172,15 @@ func TestGetContainerStatsCgroupV2PressureAndSwap(t *testing.T) {
 		t.Errorf("PodPressure=%+v, want %+v", *stat.PodPressure, wantPod)
 	}
 
-	if stat.MemoryStats.SwapUsage != 12345 {
-		t.Errorf("SwapUsage=%d, want 12345", stat.MemoryStats.SwapUsage)
+	if stat.MemoryStats.SwapUsage == nil || *stat.MemoryStats.SwapUsage != 12345 {
+		t.Errorf("SwapUsage=%v, want 12345", stat.MemoryStats.SwapUsage)
+	}
+	data, err := json.Marshal(stat)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), `"swap_usage":12345`) {
+		t.Errorf("JSON missing available swap usage: %s", data)
 	}
 }
 
@@ -189,8 +198,36 @@ func TestGetContainerStatsCgroupV2PressureAbsent(t *testing.T) {
 	if stat.PodPressure != nil {
 		t.Errorf("PodPressure=%+v, want nil (files absent)", *stat.PodPressure)
 	}
-	if stat.MemoryStats.SwapUsage != 0 {
-		t.Errorf("SwapUsage=%d, want 0 (file absent)", stat.MemoryStats.SwapUsage)
+	if stat.MemoryStats.SwapUsage != nil {
+		t.Errorf("SwapUsage=%v, want nil (file absent)", stat.MemoryStats.SwapUsage)
+	}
+	data, err := json.Marshal(stat)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), `"swap_usage"`) {
+		t.Errorf("JSON contains unavailable swap usage: %s", data)
+	}
+}
+
+func TestGetContainerStatsCgroupV2SwapZeroAvailable(t *testing.T) {
+	prefix := setupCgroupV2Fixture(t, false)
+	containerDir := filepath.Join("sys/fs/cgroup", testCgroupParent)
+	writeTestFile(t, prefix, filepath.Join(containerDir, "memory.swap.current"), "0\n")
+
+	stat, err := GetContainerStatsCgroupV2(prefix, "testcontainer", "test", testCgroupParent, 0, 42, 1<<30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stat.MemoryStats.SwapUsage == nil || *stat.MemoryStats.SwapUsage != 0 {
+		t.Errorf("SwapUsage=%v, want available zero", stat.MemoryStats.SwapUsage)
+	}
+	data, err := json.Marshal(stat)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), `"swap_usage":0`) {
+		t.Errorf("JSON missing available zero swap usage: %s", data)
 	}
 }
 
