@@ -169,6 +169,33 @@ func populateCgroupValues(prefix string, device string, cgroupsPath string, file
 		reterr = err
 		return
 	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		words := strings.Fields(line)
+		if len(words) > 0 {
+			callback(words)
+		}
+	}
+	return
+}
+
+// populatePodCgroupValues는 컨테이너 cgroup의 부모 디렉토리(파드 슬라이스)에서 파일을 읽는다.
+// PSI처럼 파드 수준 값을 컨테이너 합산으로 만들 수 없는 파일에 사용한다.
+func populatePodCgroupValues(prefix string, device string, cgroupsPath string, filename string, callback func(tokens []string)) (reterr error) {
+	cgroup_realpath := parseRealPath(cgroupsPath)
+	if !fileutil.IsExists(filepath.Join(prefix, "/sys/fs/cgroup", device, filepath.Dir(cgroup_realpath), filename)) {
+		cgroup_realpath = parseRealPathEx(cgroupsPath)
+	}
+	calculated_path := filepath.Join(prefix, "/sys/fs/cgroup", device, filepath.Dir(cgroup_realpath), filename)
+	f, err := os.Open(calculated_path)
+	if err != nil {
+		reterr = err
+		return
+	}
+	defer f.Close()
 	scanner := bufio.NewScanner(f)
 
 	for scanner.Scan() {
