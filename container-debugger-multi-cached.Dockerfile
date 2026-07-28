@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/golang:1.22-alpine3.21 AS whatap_debugger_build
+FROM public.ecr.aws/docker/library/golang:1.25.11-alpine3.22 AS whatap_debugger_build
 
 ARG TARGETOS
 ARG TARGETARCH
