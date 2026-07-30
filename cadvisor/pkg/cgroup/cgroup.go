@@ -30,8 +30,9 @@ func GetContainerStatsEx(prefix string, containerId string, name string, cgroupP
 func GetContainerStatsExRaw(prefix string, containerId string, name string, cgroupParent string,
 	restartCount int, pid int, memoryLimit int64) (whatap_model.ContainerStat, error) {
 
-	cgroupMode := GetMode()
-	if whatap_config.GetConfig().CgroupVersion == "" {
+	configuredMode := whatap_config.GetConfig().CgroupVersion
+	cgroupMode := resolveCgroupMode(configuredMode, GetMode)
+	if configuredMode == "" {
 		whatap_config.GetConfig().CgroupVersion = cgroupMode
 	}
 	if whatap_config.GetConfig().Debug {
@@ -50,4 +51,11 @@ func GetContainerStatsExRaw(prefix string, containerId string, name string, cgro
 	default:
 		return whatap_model.ContainerStat{}, fmt.Errorf("cgroup mode not supported %s", cgroupMode)
 	}
+}
+
+func resolveCgroupMode(configured string, detect func() string) string {
+	if configured != "" {
+		return configured
+	}
+	return detect()
 }
