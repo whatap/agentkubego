@@ -15,6 +15,7 @@ import (
 
 	"github.com/whatap/kube/cadvisor/pkg/client"
 	whatap_config "github.com/whatap/kube/cadvisor/pkg/config"
+	whatap_model "github.com/whatap/kube/cadvisor/pkg/model"
 	"github.com/whatap/kube/tools/util/fileutil"
 	whatap_iputil "github.com/whatap/kube/tools/util/iputil"
 	"github.com/whatap/kube/tools/util/logutil"
@@ -30,6 +31,7 @@ var (
 	containerRestartLookupMutex = sync.RWMutex{}
 	restartCacheLock            = sync.Mutex{}
 	lastCacheUpdate             int64
+	blkioReadMutex              sync.Mutex
 )
 
 func parseRealPath(cgroupsPath string) (ret string) {
@@ -60,31 +62,61 @@ func parseRealPath(cgroupsPath string) (ret string) {
 	return
 }
 
-func populateFileKeyValue(prefix string, filename string, callback func(key string, v []int64)) (reterr error) {
-	calculated_path := filepath.Join(prefix, filename)
-
-	f, err := os.Open(calculated_path)
+// readSystemCPUUsage reads a fresh aggregate CPU row without parsing every CPU
+// and interrupt counter. Guest counters are already included in user/nice.
+func readSystemCPUUsage(prefix string) (int64, error) {
+	f, err := os.Open(filepath.Join(prefix, "proc/stat"))
 	if err != nil {
-		// fmt.Println(err)
-		reterr = err
-		return
+		return 0, err
 	}
 	defer f.Close()
 	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		words := strings.Fields(scanner.Text())
+		if len(words) == 0 || words[0] != "cpu" {
+			continue
+		}
+		const systemCPUCounters = 8
+		var usage int64
+		for i := 1; i < len(words) && i <= systemCPUCounters; i++ {
+			usage += stringutil.ToInt64(words[i])
+		}
+		return usage, nil
+	}
+	return 0, scanner.Err()
+}
 
+// readContainerNetworkStats supplies the single network snapshot serialized in
+// ContainerStat. Split at ':' before Fields: net/dev need not pad the RX value.
+func readContainerNetworkStats(prefix string, pid int) (whatap_model.ContainerNetworkStats, error) {
+	var stats whatap_model.ContainerNetworkStats
+	f, err := os.Open(filepath.Join(prefix, "proc", fmt.Sprint(pid), "net/dev"))
+	if err != nil {
+		return stats, err
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := scanner.Text()
-		words := strings.Fields(line)
-		if len(words) > 1 {
-			var vals []int64
-			for _, word := range words[1:] {
-				vals = append(vals, stringutil.ToInt64(word))
-			}
-			callback(words[0], vals)
+		separator := strings.IndexByte(line, ':')
+		if separator < 0 || strings.TrimSpace(line[:separator]) == "lo" {
+			continue
 		}
+		words := strings.Fields(line[separator+1:])
+		const requiredNetworkCounters = 12
+		if len(words) < requiredNetworkCounters {
+			continue
+		}
+		stats.RxBytes += stringutil.ToInt64(words[0])
+		stats.RxPackets += stringutil.ToInt64(words[1])
+		stats.RxErrors += stringutil.ToInt64(words[2])
+		stats.RxDropped += stringutil.ToInt64(words[3])
+		stats.TxBytes += stringutil.ToInt64(words[8])
+		stats.TxPackets += stringutil.ToInt64(words[9])
+		stats.TxErrors += stringutil.ToInt64(words[10])
+		stats.TxDropped += stringutil.ToInt64(words[11])
 	}
-
-	return
+	return stats, scanner.Err()
 }
 
 func populateFileValues(prefix string, filename string, callback func(tokens []string)) (reterr error) {
@@ -157,6 +189,13 @@ func populateCgroupKeyValue(prefix string, device string, cgroupsPath string, fi
 }
 
 func populateCgroupValues(prefix string, device string, cgroupsPath string, filename string, callback func(tokens []string)) (reterr error) {
+	// cgroup v1 blkio reads contend on blkcg_print_blkgs' kernel spin lock
+	// even across different containers. Wait in userspace instead of burning
+	// CPU in concurrent read syscalls. Keep non-blkio controllers independent.
+	if device == "blkio" {
+		blkioReadMutex.Lock()
+		defer blkioReadMutex.Unlock()
+	}
 	cgroup_realpath := parseRealPath(cgroupsPath)
 	if !fileutil.IsExists(filepath.Join(prefix, "/sys/fs/cgroup", device, cgroup_realpath, filename)) {
 		cgroup_realpath = parseRealPathEx(cgroupsPath)

@@ -246,6 +246,11 @@ func measureProcessPerformance() *map[string]*ProcessInfo {
 			continue
 		}
 
+		statusBytes, readStatusErr := readProcessStatus(filepath.Join(searchDir, pid), targetList)
+		if readStatusErr == nil && statusBytes == nil {
+			continue
+		}
+
 		pinfo := new(ProcessInfo)
 		pinfo.Pid = ipid
 		pinfo.Timestamp = int(time.Now().Unix())
@@ -255,7 +260,6 @@ func measureProcessPerformance() *map[string]*ProcessInfo {
 			logutil.Infof("MPP", "Processing PID: %d", pinfo.Pid)
 		}
 
-		statusBytes, readStatusErr := os.ReadFile(strings.Join([]string{searchDir, pid, "status"}, "/"))
 		if readStatusErr == nil {
 			statusContent := string(statusBytes)
 			for _, line := range strings.Split(statusContent, "\n") {
@@ -264,7 +268,7 @@ func measureProcessPerformance() *map[string]*ProcessInfo {
 					pinfo.User = uidmap[uid]
 				} else if strings.HasPrefix(line, "Name:") {
 					pinfo.Cmd1 = strings.Split(line, "\t")[1]
-					if pinfo.Cmd1 == "" || !stringutil.StringInSlice(pinfo.Cmd1, whatap_config.GetConfig().CollectKubeNodeProcessMetricTargetList) {
+					if pinfo.Cmd1 == "" || !stringutil.StringInSlice(pinfo.Cmd1, targetList) {
 						pinfo.Excluded = true
 						if whatap_config.GetConfig().Debug {
 							logutil.Infof("MPP", "Skipping process with PID %d and Name '%s': Not in PorcessTarget list or Name is empty", pinfo.Pid, pinfo.Cmd1)
