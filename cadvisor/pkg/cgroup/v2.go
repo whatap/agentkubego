@@ -1,10 +1,6 @@
 package cgroup
 
 import (
-	"fmt"
-	"path/filepath"
-	"strings"
-
 	whatap_model "github.com/whatap/kube/cadvisor/pkg/model"
 	"github.com/whatap/kube/tools/util/stringutil"
 )
@@ -16,18 +12,11 @@ func GetContainerStatsCgroupV2(prefix string, containerId string, name string, c
 	containerStat.ID = containerId
 	containerStat.RestartCount = restartCount
 
-	err := populateFileKeyValue(prefix, "/proc/stat", func(key string, v []int64) {
-		if key == "cpu" {
-			for i, ev := range v {
-				if i < 8 {
-					containerStat.CPUStats.SystemCPUUsage += ev
-				}
-			}
-		}
-	})
+	systemCPUUsage, err := readSystemCPUUsage(prefix)
 	if err != nil {
 		return containerStat, err
 	}
+	containerStat.CPUStats.SystemCPUUsage = systemCPUUsage
 	// fmt.Println("GetContainerStats step -1")
 	err = populateCgroupKeyValue(prefix, "", cgroupParent, "cpu.stat", func(key string, v int64) {
 		// fmt.Println("populateCgroupKeyValue: ",key, v)
@@ -229,27 +218,7 @@ func GetContainerStatsCgroupV2(prefix string, containerId string, name string, c
 	containerStat.Pressure = readCgroupPressure(prefix, cgroupParent, false)
 	containerStat.PodPressure = readCgroupPressure(prefix, cgroupParent, true)
 
-	err = populateFileValues(prefix, filepath.Join("proc", fmt.Sprint(pid), "net/dev"), func(tokens []string) {
-		// fmt.Println("GetContainerStats step -7.1 ", tokens)
-		if len(tokens) < 13 {
-			return
-		}
-
-		deviceId := tokens[0]
-
-		if !strings.Contains(deviceId, ":") || deviceId == "lo:" {
-			return
-		}
-		containerStat.NetworkStats.RxBytes += stringutil.ToInt64(tokens[1])
-		containerStat.NetworkStats.RxPackets += stringutil.ToInt64(tokens[2])
-		containerStat.NetworkStats.RxErrors += stringutil.ToInt64(tokens[3])
-		containerStat.NetworkStats.RxDropped += stringutil.ToInt64(tokens[4])
-
-		containerStat.NetworkStats.TxBytes += stringutil.ToInt64(tokens[9])
-		containerStat.NetworkStats.TxPackets += stringutil.ToInt64(tokens[10])
-		containerStat.NetworkStats.TxErrors += stringutil.ToInt64(tokens[11])
-		containerStat.NetworkStats.TxDropped += stringutil.ToInt64(tokens[12])
-	})
+	containerStat.NetworkStats, err = readContainerNetworkStats(prefix, pid)
 
 	return containerStat, err
 }

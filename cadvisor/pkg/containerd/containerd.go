@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
+
 	"strings"
 	"sync"
 	"time"
@@ -340,25 +340,9 @@ func GetContainerStats(containerId string) (string, error) {
 
 	cgroupParent := spec.Linux.CgroupsPath
 
-	var statserr error
-	statsjson, statserr := whatap_cgroup.GetContainerStatsEx(HOSTPATH_PREFIX, containerId, name, cgroupParent,
+	// The cgroup collector already reads and serializes this PID's network stats.
+	return whatap_cgroup.GetContainerStatsEx(HOSTPATH_PREFIX, containerId, name, cgroupParent,
 		restartCount, pid, memoryLimit)
-
-	if statserr == nil {
-
-		netstats, err := getContainerNetworkStats(containerId)
-		if err == nil {
-			netstatJson, err := json.Marshal(netstats)
-			if err == nil {
-
-				statsjson = fmt.Sprint(strings.TrimSuffix(strings.TrimSpace(statsjson), "}"), ", \"network_stats\":", string(netstatJson), " }")
-			}
-		}
-
-		return statsjson, nil
-	}
-
-	return "", statserr
 }
 
 func getContainerRestartCount(containerId string) (int, string, error) {
@@ -418,57 +402,6 @@ func getContainerStatusContainerD(c containerd.Container, ctx context.Context, h
 	h1(status)
 
 	return
-}
-
-func getContainerNetworkStats(containerId string) (whatap_model.ContainerNetworkStats, error) {
-	var totalNetStats = whatap_model.ContainerNetworkStats{}
-	pid, err := proc.GetContainerPid(containerId)
-	if err != nil {
-		return totalNetStats, err
-	}
-
-	netdev := filepath.Join(HOSTPATH_PREFIX, "proc", fmt.Sprint(pid), "net", "dev")
-	f, err := os.Open(netdev)
-	if err != nil {
-		return totalNetStats, err
-	}
-	j := 0
-	scanner := bufio.NewScanner(f)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		j++
-		if j < 3 {
-			continue
-		}
-		words := strings.Fields(strings.Replace(line, ":", " ", -1))
-		deviceId := words[0]
-
-		if deviceId == "lo" {
-			continue
-		}
-		readByteCount, _ := strconv.ParseInt(words[1], 10, 64)
-		readCount, _ := strconv.ParseInt(words[2], 10, 64)
-		readErrorCount, _ := strconv.ParseInt(words[3], 10, 64)
-		readDroppedCount, _ := strconv.ParseInt(words[4], 10, 64)
-
-		writeByteCount, _ := strconv.ParseInt(words[9], 10, 64)
-		writeCount, _ := strconv.ParseInt(words[10], 10, 64)
-		writeErrorCount, _ := strconv.ParseInt(words[11], 10, 64)
-		writeDroppedCount, _ := strconv.ParseInt(words[12], 10, 64)
-
-		totalNetStats.RxBytes += readByteCount
-		totalNetStats.RxPackets += readCount
-		totalNetStats.RxErrors += readErrorCount
-		totalNetStats.RxDropped += readDroppedCount
-
-		totalNetStats.TxBytes += writeByteCount
-		totalNetStats.TxPackets += writeCount
-		totalNetStats.TxErrors += writeErrorCount
-		totalNetStats.TxDropped += writeDroppedCount
-
-	}
-	return totalNetStats, nil
 }
 
 func GetContainerStatsEx(prefix string, containerId string, name string, cgroupParent string,
