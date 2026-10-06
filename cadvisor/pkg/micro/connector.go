@@ -9,6 +9,7 @@ import (
 	"github.com/whatap/kube/cadvisor/pkg/containerd"
 	"github.com/whatap/kube/cadvisor/pkg/crio"
 	"github.com/whatap/kube/cadvisor/pkg/docker"
+	"github.com/whatap/kube/cadvisor/pkg/javaenv"
 	"github.com/whatap/kube/cadvisor/tools/util/runtimeutil"
 	"github.com/whatap/kube/tools/util/logutil"
 )
@@ -30,6 +31,21 @@ func InspectWhatapAgentPath(containerID string) (string, error) {
 		return crio.InspectCrioImageForWhatapPath(containerID)
 	}
 	return "", fmt.Errorf("no container runtime detected")
+}
+
+// InspectWhatapJavaAgentPathEnv intentionally avoids the legacy Docker inspect
+// path, which logs the complete container configuration at debug level.
+func InspectWhatapJavaAgentPathEnv(containerID string) (string, error) {
+	switch {
+	case IsContainerD:
+		return javaenv.Inspect("containerd", containerID)
+	case IsDocker:
+		return javaenv.Inspect("docker", containerID)
+	case IsCrio:
+		return javaenv.Inspect("crio", containerID)
+	default:
+		return "", fmt.Errorf("no container runtime detected")
+	}
 }
 
 func IsValidAgentPath(path string) bool {

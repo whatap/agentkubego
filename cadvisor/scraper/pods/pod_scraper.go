@@ -27,20 +27,21 @@ var (
 )
 
 type SimpleContainerInfo struct {
-	ContainerName            string
-	ContainerId              string
-	IsApm                    bool
-	ExecProcessed            bool
-	whatapJavaAgentPath      string
-	whatapPythonAgentPath    string
-	whatapNodeJsAgentPath    string
-	whatapPhpAgentPath       string
-	whatapGoAgentPath        string
-	whatapDotnetAgentPath    string
-	whatapExecutableJavaPath string
-	ContainerState           string
-	ProcessPids              []int
-	ProcessInfo              map[string]whatap_model.ProcessInfo
+	ContainerName               string
+	ContainerId                 string
+	IsApm                       bool
+	ExecProcessed               bool
+	whatapJavaAgentPath         string
+	javaAgentPathFromRuntimeEnv bool
+	whatapPythonAgentPath       string
+	whatapNodeJsAgentPath       string
+	whatapPhpAgentPath          string
+	whatapGoAgentPath           string
+	whatapDotnetAgentPath       string
+	whatapExecutableJavaPath    string
+	ContainerState              string
+	ProcessPids                 []int
+	ProcessInfo                 map[string]whatap_model.ProcessInfo
 }
 
 type SimplePodInfo struct {
@@ -234,17 +235,18 @@ func createSimplePodInfo(pod *corev1.Pod) SimplePodInfo {
 	for _, containerSpec := range pod.Spec.Containers {
 		// container spec 1개씩 까보기
 		containerInfo := SimpleContainerInfo{
-			ContainerName:            containerSpec.Name,
-			ContainerId:              getContainerId(pod.Status.ContainerStatuses, containerSpec.Name),
-			IsApm:                    checkIfApmAgent(containerSpec.Env),
-			whatapJavaAgentPath:      getWhatapJavaAgentPath(containerSpec.Env),
-			whatapPythonAgentPath:    getEnv(containerSpec.Env, "WHATAP_PYTHON_AGENT_PATH"),
-			whatapNodeJsAgentPath:    getEnv(containerSpec.Env, "WHATAP_NODEJS_AGENT_PATH"),
-			whatapPhpAgentPath:       getEnv(containerSpec.Env, "WHATAP_PHP_AGENT_PATH"),
-			whatapGoAgentPath:        getEnv(containerSpec.Env, "WHATAP_GO_AGENT_PATH"),
-			whatapDotnetAgentPath:    getEnv(containerSpec.Env, "WHATAP_DOTNET_AGENT_PATH"),
-			whatapExecutableJavaPath: getEnv(containerSpec.Env, "WHATAP_EXECUTABLE_JAVA_PATH"),
-			ContainerState:           getContainerState(pod.Status.ContainerStatuses, containerSpec.Name)}
+			ContainerName:               containerSpec.Name,
+			ContainerId:                 getContainerId(pod.Status.ContainerStatuses, containerSpec.Name),
+			IsApm:                       checkIfApmAgent(containerSpec.Env),
+			whatapJavaAgentPath:         getWhatapJavaAgentPath(containerSpec.Env),
+			javaAgentPathFromRuntimeEnv: needsJavaAgentRuntimeEnv(containerSpec),
+			whatapPythonAgentPath:       getEnv(containerSpec.Env, "WHATAP_PYTHON_AGENT_PATH"),
+			whatapNodeJsAgentPath:       getEnv(containerSpec.Env, "WHATAP_NODEJS_AGENT_PATH"),
+			whatapPhpAgentPath:          getEnv(containerSpec.Env, "WHATAP_PHP_AGENT_PATH"),
+			whatapGoAgentPath:           getEnv(containerSpec.Env, "WHATAP_GO_AGENT_PATH"),
+			whatapDotnetAgentPath:       getEnv(containerSpec.Env, "WHATAP_DOTNET_AGENT_PATH"),
+			whatapExecutableJavaPath:    getEnv(containerSpec.Env, "WHATAP_EXECUTABLE_JAVA_PATH"),
+			ContainerState:              getContainerState(pod.Status.ContainerStatuses, containerSpec.Name)}
 
 		if containerInfo.IsApm {
 			podInfo.ContainsApmAgent = true
@@ -279,15 +281,6 @@ func checkIfApmAgent(envs []corev1.EnvVar) bool {
 	}
 	return false
 }
-func getWhatapJavaAgentPath(envs []corev1.EnvVar) string {
-	for _, env := range envs {
-		if env.Name == "WHATAP_JAVA_AGENT_PATH" {
-			return env.Value
-		}
-	}
-	return ""
-}
-
 func getEnv(envs []corev1.EnvVar, key string) string {
 	for _, env := range envs {
 		if env.Name == key {
@@ -349,9 +342,12 @@ func process(podInfo *SimplePodInfo) {
 }
 
 func executeInjection(podInfo *SimplePodInfo) {
+	if !whatap_config.GetConfig().InjectContainerIdToApmAgentEnabled {
+		return
+	}
 	// Pod 내의 모든 컨테이너에 대해 반복
 	for i, containerInfo := range podInfo.ContainerInfos {
-		if containerInfo.ContainerId == "" {
+		if containerInfo.ContainerId == "" || containerInfo.ContainerState != "Running" {
 			continue
 		}
 		if !containerInfo.IsApm {
@@ -365,6 +361,13 @@ func executeInjection(podInfo *SimplePodInfo) {
 
 		// 실행할 명령이 있는 경우
 		// 1. env 우선: Java, Python, NodeJs, PHP, Go, Dotnet 순
+		if containerInfo.javaAgentPathFromRuntimeEnv {
+			// Read startup-resolved environment, not a mutable ConfigMap. A miss/error
+			// is not cached, so a later event can retry while existing fallbacks remain.
+			if path, err := whatap_micro.InspectWhatapJavaAgentPathEnv(containerInfo.ContainerId); err == nil {
+				containerInfo.whatapJavaAgentPath = path
+			}
+		}
 		if checkAndExecuteInjection(i, podInfo, containerInfo, containerInfo.whatapJavaAgentPath, "ApmEnv-Java") {
 			podsMap[podInfo.Uid] = *podInfo
 			continue
