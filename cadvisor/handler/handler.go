@@ -27,6 +27,7 @@ import (
 	whatap_crio "github.com/whatap/kube/cadvisor/pkg/crio"
 	whatap_docker "github.com/whatap/kube/cadvisor/pkg/docker"
 	whatap_model "github.com/whatap/kube/cadvisor/pkg/model"
+	"github.com/whatap/kube/cadvisor/pkg/processcount"
 	whatap_osinfo "github.com/whatap/kube/cadvisor/tools/osinfo"
 	"github.com/whatap/kube/cadvisor/tools/util/runtimeutil"
 	"github.com/whatap/kube/tools/util/logutil"
@@ -344,6 +345,21 @@ func GetHostDiskHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Content-Type", contentType)
 	w.Write([]byte(content))
 }
+
+// GetHostProcessCountHandler leaves the existing process performance API unchanged.
+func GetHostProcessCountHandler(w http.ResponseWriter, req *http.Request) {
+	conf := whatap_config.GetConfig()
+	counts, err := processcount.Collect(filepath.Join(conf.HostPathPrefix, "proc"), conf.CollectKubeNodeProcessMetricTargetList)
+	if err != nil {
+		http.Error(w, "process count collection failed", http.StatusServiceUnavailable)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(counts); err != nil {
+		logutil.Errorf("process-count", "response write failed: %v", err)
+	}
+}
+
 func GetHostProcessHandler(w http.ResponseWriter, req *http.Request) {
 	processPerfs := whatap_osinfo.GetProcessPerfList()
 	contentType := "application/json"

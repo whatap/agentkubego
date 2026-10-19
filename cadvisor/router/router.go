@@ -55,6 +55,7 @@ func Route() {
 
 	r.HandleFunc("/host/disks", handler.GetHostDiskHandler)
 	r.HandleFunc("/host/processes", handler.GetHostProcessHandler)
+	r.HandleFunc("/host/process-counts", handler.GetHostProcessCountHandler)
 
 	// fmt.Println(time.Now(), "trying to listen", fmt.Sprintf(":%d", *port))
 	// loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, r)
