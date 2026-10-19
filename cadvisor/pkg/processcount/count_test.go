@@ -67,6 +67,35 @@ func TestScanFailureIsNotZero(t *testing.T) {
 	}
 }
 
+func TestMalformedNameDelimiterFailsClosed(t *testing.T) {
+	for _, line := range []string{"Name:", "Name: kubelet", "Name:kubelet"} {
+		t.Run(line, func(t *testing.T) {
+			root := t.TempDir()
+			status(t, root, "10", "kubelet", "1")
+			if err := os.WriteFile(filepath.Join(root, "10", "status"), []byte(line+"\nPPid:	1\n"), 0644); err != nil {
+				t.Fatal(err)
+			}
+			counts, err := Collect(root, []string{"kubelet"})
+			if err == nil || counts != nil {
+				t.Fatalf("malformed status %q returned counts=%v, err=%v; want nil counts and an error", line, counts, err)
+			}
+		})
+	}
+}
+
+func TestExactNameBytes(t *testing.T) {
+	root := t.TempDir()
+	status(t, root, "10", " name ", "1")
+	status(t, root, "11", "x	y", "1")
+	status(t, root, "12", "kubelet-extra", "1")
+	status(t, root, "13", "	name	", "1")
+	want := map[string]int{" name ": 1, "name": 0, "x	y": 1, "x": 0, "kubelet": 0, "	name	": 1}
+	counts, err := Collect(root, []string{" name ", "name", "x	y", "x", "kubelet", "	name	"})
+	if err != nil || !reflect.DeepEqual(counts, want) {
+		t.Fatalf("counts=%v, err=%v; want %v", counts, err, want)
+	}
+}
+
 func TestExitedDuringScanAndEmptyTargets(t *testing.T) {
 	root := t.TempDir()
 	if err := os.Mkdir(filepath.Join(root, "10"), 0755); err != nil {

@@ -32,6 +32,18 @@ func TestProcessCountResponse(t *testing.T) {
 	if res.Code != 200 || counts["kubelet"] != 1 || counts["dockerd"] != 0 || len(counts) != 2 {
 		t.Fatalf("unexpected response %d: %s", res.Code, res.Body.String())
 	}
+	for _, line := range []string{"Name:", "Name: kubelet", "Name:kubelet"} {
+		t.Run(line, func(t *testing.T) {
+			if err := os.WriteFile(filepath.Join(conf.HostPathPrefix, "proc", "10", "status"), []byte(line+"\nPPid:	1\n"), 0644); err != nil {
+				t.Fatal(err)
+			}
+			res := httptest.NewRecorder()
+			GetHostProcessCountHandler(res, req)
+			if res.Code != 503 {
+				t.Fatalf("malformed status %q returned %d: %s", line, res.Code, res.Body.String())
+			}
+		})
+	}
 	if err := os.RemoveAll(filepath.Join(conf.HostPathPrefix, "proc")); err != nil {
 		t.Fatal(err)
 	}

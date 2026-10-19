@@ -22,6 +22,10 @@ func Collect(procPath string, targets []string) (map[string]int, error) {
 	if len(counts) == 0 {
 		return counts, nil
 	}
+	root, err := os.Stat(procPath)
+	if err != nil {
+		return nil, err
+	}
 	entries, err := os.ReadDir(procPath)
 	if err != nil {
 		return nil, err
@@ -37,14 +41,17 @@ func Collect(procPath string, targets []string) (map[string]int, error) {
 		data, err := os.ReadFile(filepath.Join(procPath, entry.Name(), "status"))
 		if os.IsNotExist(err) {
 			continue
-		} // Process exited during the scan.
+		} // A PID may exit; the proc root is checked again before returning counts.
 		if err != nil {
 			return nil, err
 		}
 		name, ppid := "", -1
 		for _, line := range strings.Split(string(data), "\n") {
 			if strings.HasPrefix(line, "Name:") {
-				name = strings.TrimPrefix(line, "Name:\t")
+				if !strings.HasPrefix(line, "Name:	") {
+					return nil, fmt.Errorf("invalid Name for PID %d", pid)
+				}
+				name = strings.TrimPrefix(line, "Name:	")
 			}
 			if strings.HasPrefix(line, "PPid:") {
 				ppid, err = strconv.Atoi(strings.TrimSpace(strings.TrimPrefix(line, "PPid:")))
@@ -62,6 +69,13 @@ func Collect(procPath string, targets []string) (map[string]int, error) {
 		if _, ok := counts[name]; ok {
 			counts[name]++
 		}
+	}
+	currentRoot, err := os.Stat(procPath)
+	if err != nil {
+		return nil, err
+	}
+	if !os.SameFile(root, currentRoot) {
+		return nil, fmt.Errorf("proc root changed during scan: %s", procPath)
 	}
 	return counts, nil
 }
