@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/golang:1.25.11-alpine3.22 AS whatap_cadvisor_helper_build
+FROM public.ecr.aws/docker/library/golang:1.26.10-alpine3.23 AS whatap_cadvisor_helper_build
 
 ARG TARGETOS
 ARG TARGETARCH
