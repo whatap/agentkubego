@@ -94,6 +94,7 @@ func RunPodInformer() {
 	go podsInformer.Run(ch)
 	cache.WaitForCacheSync(ch, podsInformer.HasSynced)
 	go runPodCacheSweeper(podsInformer)
+	go runInjectionRetrier()
 }
 
 func podDeleteHandler(obj interface{}) {
@@ -133,6 +134,7 @@ func removePodFromCache(uid string) {
 			continue
 		}
 		processedContainers.Delete(containerInfo.ContainerId)
+		injectionRetries.Delete(containerInfo.ContainerId)
 		proc.RemoveContainerPid(containerInfo.ContainerId)
 	}
 }
@@ -190,6 +192,13 @@ func sweepPodCaches(store cache.Store) {
 		}
 		if _, live := liveContainerIds[id]; !live {
 			processedContainers.Delete(key)
+		}
+		return true
+	})
+	injectionRetries.Range(func(key, _ interface{}) bool {
+		id, isString := key.(string)
+		if _, live := liveContainerIds[id]; !isString || !live {
+			injectionRetries.Delete(key)
 		}
 		return true
 	})
@@ -358,6 +367,10 @@ func executeInjection(podInfo *SimplePodInfo) {
 		if containerInfo.ExecProcessed {
 			continue
 		}
+		// 직전 실행이 실패했다면 재시도 시각까지 기다린다
+		if !injectionRetryDue(containerInfo.ContainerId) {
+			continue
+		}
 
 		// 실행할 명령이 있는 경우
 		// 1. env 우선: Java, Python, NodeJs, PHP, Go, Dotnet 순
@@ -513,21 +526,28 @@ func execCall(i int, agentPath string, podInfo *SimplePodInfo, containerInfo Sim
 	if strings.HasSuffix(strings.ToLower(agentPath), ".jar") {
 		javaExecPath = resolveJavaExecPath(podInfo, containerInfo)
 	}
-	_, execErr := executeWhatapAgentCommand(podInfo.Namespace, podInfo.Name, containerInfo.ContainerName, containerInfo.ContainerId, agentPath, javaExecPath)
-	processedContainers.Store(containerInfo.ContainerId, true) // 처리된 컨테이너 ID를 저장
-	podInfo.ContainerInfos[i].ExecProcessed = true
+	_, execErr := execAgentCommand(podInfo.Namespace, podInfo.Name, containerInfo.ContainerName, containerInfo.ContainerId, agentPath, javaExecPath)
 	podName := podInfo.Name
 	containerName := containerInfo.ContainerName
 	containerId := containerInfo.ContainerId
 	containerState := containerInfo.ContainerState
 	if execErr == nil {
-		// 명령 실행 성공 시, ExecProcessed를 true로 설정
+		// 성공한 컨테이너만 처리됨으로 기록한다
+		markInjectionDone(containerId)
+		podInfo.ContainerInfos[i].ExecProcessed = true
 		logutil.Infof("execCall", "Successfully executed Whatap agent command for pod: %v // container: %v:%v[%v]", podName, containerName, containerId, containerState)
 		return true, nil
-	} else {
-		logutil.Infof("execCall", "Failed to execute Whatap agent command for pod: %v, container: %v:%v[%v], err: %v", podInfo.Name, containerInfo.ContainerName, containerInfo.ContainerId, containerInfo.ContainerState, execErr)
-		return false, execErr
 	}
+	// 앱 기동 전(에이전트 파일 미생성)이나 일시적인 exec 오류로 실패할 수 있으므로
+	// 실패는 처리됨으로 기록하지 않고 backoff 후 재시도한다. 한도를 넘으면 포기한다.
+	attempts, retryAfter, gaveUp := recordInjectionFailure(containerId)
+	if gaveUp {
+		podInfo.ContainerInfos[i].ExecProcessed = true
+		logutil.Infof("execCall", "Failed to execute Whatap agent command for pod: %v, container: %v:%v[%v], err: %v (attempt %d/%d, giving up)", podName, containerName, containerId, containerState, execErr, attempts, injectionMaxAttempts)
+	} else {
+		logutil.Infof("execCall", "Failed to execute Whatap agent command for pod: %v, container: %v:%v[%v], err: %v (attempt %d/%d, retry in %v)", podName, containerName, containerId, containerState, execErr, attempts, injectionMaxAttempts, retryAfter)
+	}
+	return false, execErr
 }
 func isContainerProcessed(containerID string) bool {
 	_, processed := processedContainers.Load(containerID)

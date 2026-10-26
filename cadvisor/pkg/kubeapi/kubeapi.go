@@ -1,6 +1,7 @@
 package kubeapi
 
 import (
+	"context"
 	"fmt"
 	"github.com/whatap/kube/cadvisor/pkg/client"
 	corev1 "k8s.io/api/core/v1"
@@ -9,7 +10,11 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	"net/http"
 	"os"
+	"time"
 )
+
+// injectExecTimeout bounds one container-ID exec (`<agent> -c <id>`, or a short JVM run for the Java agent).
+const injectExecTimeout = 30 * time.Second
 
 func ExecCommandForInjectContainerIdToWhatapAgent(namespace string, podName string, containerName string, containerId string, cmds []string) error {
 	kubeClient, err := client.GetKubernetesClient()
@@ -40,7 +45,10 @@ func ExecCommandForInjectContainerIdToWhatapAgent(namespace string, podName stri
 		return err
 	}
 
-	err = exec.Stream(remotecommand.StreamOptions{
+	// The caller holds the pod cache lock during this exec, so a hung stream must not block it forever.
+	ctx, cancel := context.WithTimeout(context.Background(), injectExecTimeout)
+	defer cancel()
+	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdin:  nil,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
