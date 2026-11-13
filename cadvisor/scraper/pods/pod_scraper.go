@@ -20,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -71,11 +72,8 @@ func RunPodInformer() {
 		return
 	}
 
-	// 인포머 팩토리 생성: 자기 노드 파드만 list/watch하고, 사용하지 않는 메타데이터는 캐시 전에 제거한다
-	factory := informers.NewSharedInformerFactoryWithOptions(kubeClient, 0,
-		informers.WithTweakListOptions(nodePodListOptions(nodename)),
-		informers.WithTransform(stripUnusedPodFields))
-	podsInformer := factory.Core().V1().Pods().Informer()
+	// 인포머 생성: 자기 노드 파드만 list/watch하고, 사용하지 않는 메타데이터는 캐시 전에 제거한다
+	podsInformer := newNodePodInformer(kubeClient, nodename)
 
 	ch := make(chan struct{})
 	// Workqueue 구성 및 생성
@@ -106,6 +104,15 @@ func RunPodInformer() {
 	cache.WaitForCacheSync(ch, podsInformer.HasSynced)
 	go runPodCacheSweeper(podsInformer)
 	go runInjectionRetrier()
+}
+
+// newNodePodInformer는 node에 배치된 파드만 list/watch하고,
+// 핸들러가 읽지 않는 메타데이터를 비운 채 캐시하는 pod informer를 만든다.
+func newNodePodInformer(kubeClient kubernetes.Interface, node string) cache.SharedIndexInformer {
+	factory := informers.NewSharedInformerFactoryWithOptions(kubeClient, 0,
+		informers.WithTweakListOptions(nodePodListOptions(node)),
+		informers.WithTransform(stripUnusedPodFields))
+	return factory.Core().V1().Pods().Informer()
 }
 
 // nodePodListOptions는 pod list/watch를 spec.nodeName=node로 한정한다.
