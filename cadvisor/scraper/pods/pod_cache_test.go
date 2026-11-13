@@ -142,3 +142,37 @@ func TestSweepPodCaches(t *testing.T) {
 		t.Errorf("gone container should be swept")
 	}
 }
+
+func TestNodePodListOptions(t *testing.T) {
+	options := metav1.ListOptions{LabelSelector: "app=x"}
+	nodePodListOptions("node-a")(&options)
+	if options.FieldSelector != "spec.nodeName=node-a" {
+		t.Fatalf("FieldSelector = %q, want spec.nodeName=node-a", options.FieldSelector)
+	}
+	if options.LabelSelector != "app=x" {
+		t.Fatalf("LabelSelector changed to %q", options.LabelSelector)
+	}
+}
+
+func TestStripUnusedPodFields(t *testing.T) {
+	pod := newTestPod("p", "uid-1", "node-a", "c1")
+	pod.Labels = map[string]string{"app": "x"}
+	pod.Annotations = map[string]string{"kubectl.kubernetes.io/last-applied-configuration": "{}"}
+	pod.ManagedFields = []metav1.ManagedFieldsEntry{{Manager: "kubectl"}}
+
+	out, err := stripUnusedPodFields(pod)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := out.(*corev1.Pod)
+	if got.ManagedFields != nil || got.Annotations != nil {
+		t.Fatalf("managedFields/annotations not stripped: %v %v", got.ManagedFields, got.Annotations)
+	}
+	if got.Labels["app"] != "x" || got.Spec.NodeName != "node-a" || len(got.Status.ContainerStatuses) != 1 {
+		t.Fatalf("used fields must be kept: %+v", got)
+	}
+
+	if _, err := stripUnusedPodFields(cache.DeletedFinalStateUnknown{Key: "default/p"}); err != nil {
+		t.Fatal(err)
+	}
+}

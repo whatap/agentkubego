@@ -17,6 +17,8 @@ import (
 	whatap_osinfo "github.com/whatap/kube/cadvisor/tools/osinfo"
 	"github.com/whatap/kube/tools/util/logutil"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
 )
@@ -62,8 +64,17 @@ func RunPodInformer() {
 		return
 	}
 
-	// 인포머 팩토리 생성
-	factory := informers.NewSharedInformerFactory(kubeClient, 0)
+	// 핸들러는 자기 노드 파드만 처리하므로 NODE_NAME이 없으면 informer가 할 일이 없다.
+	// 전 클러스터 파드를 캐시하지 않도록 informer를 띄우지 않는다.
+	if nodename == "" {
+		logutil.Errorf("whatap-node-helper", "NODE_NAME is not set, pod informer disabled\n")
+		return
+	}
+
+	// 인포머 팩토리 생성: 자기 노드 파드만 list/watch하고, 사용하지 않는 메타데이터는 캐시 전에 제거한다
+	factory := informers.NewSharedInformerFactoryWithOptions(kubeClient, 0,
+		informers.WithTweakListOptions(nodePodListOptions(nodename)),
+		informers.WithTransform(stripUnusedPodFields))
 	podsInformer := factory.Core().V1().Pods().Informer()
 
 	ch := make(chan struct{})
@@ -95,6 +106,24 @@ func RunPodInformer() {
 	cache.WaitForCacheSync(ch, podsInformer.HasSynced)
 	go runPodCacheSweeper(podsInformer)
 	go runInjectionRetrier()
+}
+
+// nodePodListOptions는 pod list/watch를 spec.nodeName=node로 한정한다.
+// 대규모 클러스터에서 node-helper마다 전체 파드를 캐시하던 메모리 사용을 노드 파드 수로 줄인다.
+func nodePodListOptions(node string) func(*metav1.ListOptions) {
+	selector := fields.OneTermEqualSelector("spec.nodeName", node).String()
+	return func(options *metav1.ListOptions) {
+		options.FieldSelector = selector
+	}
+}
+
+// stripUnusedPodFields는 핸들러가 읽지 않는 managedFields/annotations를 informer store 적재 전에 비운다.
+func stripUnusedPodFields(obj interface{}) (interface{}, error) {
+	if pod, ok := obj.(*corev1.Pod); ok {
+		pod.ManagedFields = nil
+		pod.Annotations = nil
+	}
+	return obj, nil
 }
 
 func podDeleteHandler(obj interface{}) {
