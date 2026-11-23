@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM} public.ecr.aws/docker/library/golang:1.25.11-alpine3.22 AS whatap_control_plane_helper_build
+FROM --platform=${BUILDPLATFORM} public.ecr.aws/docker/library/golang:1.26.11-alpine3.24 AS whatap_control_plane_helper_build
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
